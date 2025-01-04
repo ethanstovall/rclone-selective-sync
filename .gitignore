@@ -1,0 +1,8 @@
+build/
+# Ignore node_modules in the frontend directory
+frontend/node_modules/
+
+# Ignore other common unnecessary files.
+*.log
+*.env
+*.DS_Store
