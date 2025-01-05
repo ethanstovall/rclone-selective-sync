@@ -1,4 +1,4 @@
-module changeme
+module github.com/ethanstovall/rclone-selective-sync
 
 go 1.22.4
 
