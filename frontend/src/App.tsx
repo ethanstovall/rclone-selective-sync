@@ -1,5 +1,5 @@
 // import { useState, useEffect } from 'react'
-import {InitializerService} from "../bindings/github.com/ethanstovall/rclone-selective-sync";
+import {SyncService} from "../bindings/github.com/ethanstovall/rclone-selective-sync";
 // import {Events, WML} from "@wailsio/runtime";
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
     // if (!localName) {
     //   localName = 'anonymous';
     // }
-    InitializerService.Initialize().then(([pointer, err]) => {
+    SyncService.Test().then(([pointer, err]) => {
       console.log('created config');
     }).catch((err: any) => {
       console.log(err);
