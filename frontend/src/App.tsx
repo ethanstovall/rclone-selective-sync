@@ -1,31 +1,31 @@
-import { useState, useEffect } from 'react'
-import {GreetService} from "../bindings/github.com/ethanstovall/rclone-selective-sync";
-import {Events, WML} from "@wailsio/runtime";
+// import { useState, useEffect } from 'react'
+import {InitializerService} from "../bindings/github.com/ethanstovall/rclone-selective-sync";
+// import {Events, WML} from "@wailsio/runtime";
 
 function App() {
-  const [name, setName] = useState<string>('');
-  const [result, setResult] = useState<string>('Please enter your name below 👇');
-  const [time, setTime] = useState<string>('Listening for Time event...');
+  // const [name, setName] = useState<string>('');
+  // const [result, setResult] = useState<string>('Please enter your name below 👇');
+  // const [time, setTime] = useState<string>('Listening for Time event...');
 
   const doGreet = () => {
-    let localName = name;
-    if (!localName) {
-      localName = 'anonymous';
-    }
-    GreetService.Greet(localName).then((resultValue: string) => {
-      setResult(resultValue);
+    // let localName = name;
+    // if (!localName) {
+    //   localName = 'anonymous';
+    // }
+    InitializerService.Initialize().then(([pointer, err]) => {
+      console.log('created config');
     }).catch((err: any) => {
       console.log(err);
     });
   }
 
-  useEffect(() => {
-    Events.On('time', (timeValue: any) => {
-      setTime(timeValue.data);
-    });
-    // Reload WML so it picks up the wml tags
-    WML.Reload();
-  }, []);
+  // useEffect(() => {
+  //   Events.On('time', (timeValue: any) => {
+  //     setTime(timeValue.data);
+  //   });
+  //   // Reload WML so it picks up the wml tags
+  //   WML.Reload();
+  // }, []);
 
   return (
     <div className="container">
@@ -38,16 +38,16 @@ function App() {
         </a>
       </div>
       <h1>Wails + React</h1>
-      <div className="result">{result}</div>
+      {/* <div className="result">{result}</div> */}
       <div className="card">
         <div className="input-box">
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} type="text" autoComplete="off"/>
+          {/* <input className="input" value={name} onChange={(e) => setName(e.target.value)} type="text" autoComplete="off"/> */}
           <button className="btn" onClick={doGreet}>Greet</button>
         </div>
       </div>
       <div className="footer">
         <div><p>Click on the Wails logo to learn more</p></div>
-        <div><p>{time}</p></div>
+        {/* <div><p>{time}</p></div> */}
       </div>
     </div>
   )
