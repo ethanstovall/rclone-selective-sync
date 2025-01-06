@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import {SyncService} from "../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
+import {LoadProjectConfigService} from "../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import {Events, WML} from "@wailsio/runtime";
 
 function App() {
@@ -12,8 +12,8 @@ function App() {
     // if (!localName) {
     //   localName = 'anonymous';
     // }
-    SyncService.Test().then(([pointer, err]) => {
-      console.log('created config');
+    LoadProjectConfigService.LoadProjectConfig("Test Project").then(([config, err]) => {
+      console.log(config);
     }).catch((err: any) => {
       console.log(err);
     });

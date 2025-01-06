@@ -23,7 +23,7 @@ var assets embed.FS
 func main() {
 
 	// Load the user's app configuration.
-	configLoadErr := backend.InitializeConfig()
+	configLoadErr := backend.LoadGlobalConfig()
 	if configLoadErr != nil {
 		log.Fatalf("Failed to initialize Rclone remote configuration: %v", configLoadErr)
 	}
@@ -38,6 +38,7 @@ func main() {
 		Description: "An application allowing selective syncing of subfolders in a remote storage bucket using Rclone.",
 		Services: []application.Service{
 			application.NewService(&backend.SyncService{}),
+			application.NewService(&backend.LoadProjectConfigService{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

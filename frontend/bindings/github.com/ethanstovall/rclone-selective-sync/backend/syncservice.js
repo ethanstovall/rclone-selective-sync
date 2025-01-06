@@ -6,10 +6,17 @@
 // @ts-ignore: Unused imports
 import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
 /**
+ * @param {string} selectedProject
+ * @param {string} targetFolder
+ * @param {$models.RcloneAction} action
  * @returns {Promise<void> & { cancel(): void }}
  */
-export function Test() {
-    let $resultPromise = /** @type {any} */($Call.ByID(4115509739));
+export function ExecuteRcloneAction(selectedProject, targetFolder, action) {
+    let $resultPromise = /** @type {any} */($Call.ByID(1430199943, selectedProject, targetFolder, action));
     return $resultPromise;
 }
