@@ -1,11 +1,11 @@
-// import { useState, useEffect } from 'react'
-import {SyncService} from "../bindings/github.com/ethanstovall/rclone-selective-sync";
-// import {Events, WML} from "@wailsio/runtime";
+import { useState, useEffect } from 'react'
+import {SyncService} from "../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
+import {Events, WML} from "@wailsio/runtime";
 
 function App() {
   // const [name, setName] = useState<string>('');
   // const [result, setResult] = useState<string>('Please enter your name below 👇');
-  // const [time, setTime] = useState<string>('Listening for Time event...');
+  const [time, setTime] = useState<string>('Listening for Time event...');
 
   const doGreet = () => {
     // let localName = name;
@@ -19,13 +19,13 @@ function App() {
     });
   }
 
-  // useEffect(() => {
-  //   Events.On('time', (timeValue: any) => {
-  //     setTime(timeValue.data);
-  //   });
-  //   // Reload WML so it picks up the wml tags
-  //   WML.Reload();
-  // }, []);
+  useEffect(() => {
+    Events.On('time', (timeValue: any) => {
+      setTime(timeValue.data);
+    });
+    // Reload WML so it picks up the wml tags
+    WML.Reload();
+  }, []);
 
   return (
     <div className="container">
@@ -47,7 +47,7 @@ function App() {
       </div>
       <div className="footer">
         <div><p>Click on the Wails logo to learn more</p></div>
-        {/* <div><p>{time}</p></div> */}
+        <div><p>{time}</p></div>
       </div>
     </div>
   )

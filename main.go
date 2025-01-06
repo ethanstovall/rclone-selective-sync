@@ -2,10 +2,10 @@ package main
 
 import (
 	"embed"
-	_ "embed"
 	"log"
 	"time"
 
+	"github.com/ethanstovall/rclone-selective-sync/backend" // Import the backend package.
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -22,8 +22,8 @@ var assets embed.FS
 // logs any error that might occur.
 func main() {
 
-	// Load the global Rclone remote configuration.
-	configLoadErr := InitializeConfig()
+	// Load the user's app configuration.
+	configLoadErr := backend.InitializeConfig()
 	if configLoadErr != nil {
 		log.Fatalf("Failed to initialize Rclone remote configuration: %v", configLoadErr)
 	}
@@ -35,9 +35,9 @@ func main() {
 	// 'Mac' options tailor the application when running an macOS.
 	app := application.New(application.Options{
 		Name:        "rclone-selective-sync",
-		Description: "A demo of using raw HTML & CSS",
+		Description: "An application allowing selective syncing of subfolders in a remote storage bucket using Rclone.",
 		Services: []application.Service{
-			application.NewService(&SyncService{}),
+			application.NewService(&backend.SyncService{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
