@@ -1,20 +1,21 @@
 package backend
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type SyncService struct{}
 
-func (s *SyncService) ExecuteRcloneAction(selectedProject string, targetFolder string, action RcloneAction) error {
-	project, exists := ConfigInstance.Remotes[selectedProject]
+func (s *SyncService) ExecuteRcloneAction(targetFolder string, action RcloneAction) (string, error) {
+	remoteConfig := ConfigInstance.Remotes[ConfigInstance.SelectedProject]
+	projectConfig, exists := CurrentProjectConfig.Folders[targetFolder]
 	if !exists {
-		return fmt.Errorf("project not found: %s", selectedProject)
+		return "", fmt.Errorf("target folder not found: %s", targetFolder)
 	}
-
-	command, err := NewRcloneCommand(project, targetFolder, action)
+	command, err := NewRcloneCommand(remoteConfig, projectConfig.RemotePath, projectConfig.LocalPath, action)
 	if err != nil {
-		return err
+		return "", err
 	}
-
 	return command.Exec()
 }
 

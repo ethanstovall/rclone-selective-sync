@@ -11,12 +11,11 @@ import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 import * as $models from "./models.js";
 
 /**
- * @param {string} selectedProject
  * @param {string} targetFolder
  * @param {$models.RcloneAction} action
- * @returns {Promise<void> & { cancel(): void }}
+ * @returns {Promise<string> & { cancel(): void }}
  */
-export function ExecuteRcloneAction(selectedProject, targetFolder, action) {
-    let $resultPromise = /** @type {any} */($Call.ByID(1430199943, selectedProject, targetFolder, action));
+export function ExecuteRcloneAction(targetFolder, action) {
+    let $resultPromise = /** @type {any} */($Call.ByID(1430199943, targetFolder, action));
     return $resultPromise;
 }

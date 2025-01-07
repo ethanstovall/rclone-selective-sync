@@ -9,20 +9,21 @@ type RcloneCommand struct {
 	command *exec.Cmd
 }
 
-func NewRcloneCommand(selectedProject RemoteConfig, targetFolder string, action RcloneAction) (*RcloneCommand, error) {
+func NewRcloneCommand(remoteConfig RemoteConfig, remoteFolderPath string, localFolderPath string, action RcloneAction) (*RcloneCommand, error) {
 	var cmd *exec.Cmd
 
-	remotePath := fmt.Sprintf("%s:%s/%s", selectedProject.RemoteName, selectedProject.BucketName, targetFolder)
+	fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, remoteFolderPath)
+	fullLocalPath := fmt.Sprintf("%s/%s", remoteConfig.LocalPath, localFolderPath)
 
 	switch action {
 	case PUSH:
-		cmd = exec.Command("rclone", "sync", selectedProject.LocalPath, remotePath)
+		cmd = exec.Command("rclone", "sync", fullLocalPath, fullRemotePath, "--dry-run")
 	case PULL:
-		cmd = exec.Command("rclone", "sync", remotePath, selectedProject.LocalPath)
-	case COPY_TO:
-		cmd = exec.Command("rclone", "copy", selectedProject.LocalPath, remotePath)
-	case COPY_FROM:
-		cmd = exec.Command("rclone", "copy", remotePath, selectedProject.LocalPath)
+		cmd = exec.Command("rclone", "sync", fullRemotePath, fullLocalPath, "--dry-run")
+	// case COPY_TO:
+	// 	cmd = exec.Command("rclone", "copy", fullLocalPath, fullRemotePath)
+	// case COPY_FROM:
+	// 	cmd = exec.Command("rclone", "copy", fullRemotePath, fullLocalPath)
 	default:
 		return nil, fmt.Errorf("unsupported action: %s", action)
 	}
@@ -30,11 +31,12 @@ func NewRcloneCommand(selectedProject RemoteConfig, targetFolder string, action 
 	return &RcloneCommand{command: cmd}, nil
 }
 
-func (c *RcloneCommand) Exec() error {
+func (c *RcloneCommand) Exec() (string, error) {
 	output, err := c.command.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("command execution failed: %w. Output: %s", err, string(output))
+		return "", fmt.Errorf("command execution failed: %w. Output: %s", err, string(output))
 	}
-	fmt.Println("Command output:", string(output))
-	return nil
+	stringOutput := string(output)
+	fmt.Println("Command output:", stringOutput)
+	return stringOutput, nil
 }

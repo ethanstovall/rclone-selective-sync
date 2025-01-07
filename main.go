@@ -23,9 +23,14 @@ var assets embed.FS
 func main() {
 
 	// Load the user's app configuration.
-	configLoadErr := backend.LoadGlobalConfig()
-	if configLoadErr != nil {
-		log.Fatalf("Failed to initialize Rclone remote configuration: %v", configLoadErr)
+	globalConfigLoadErr := backend.LoadGlobalConfig()
+	if globalConfigLoadErr != nil {
+		log.Fatalf("Failed to initialize Rclone remote configuration: %v", globalConfigLoadErr)
+	}
+	// Load the initial selected project's configuration.
+	_, projectConfigLoadErr := backend.LoadProjectConfig(backend.ConfigInstance.SelectedProject)
+	if projectConfigLoadErr != nil {
+		log.Fatalf("Failed to initialize project configuration for selected project: %v", projectConfigLoadErr)
 	}
 
 	// Create a new Wails application by providing the necessary options.
@@ -38,7 +43,6 @@ func main() {
 		Description: "An application allowing selective syncing of subfolders in a remote storage bucket using Rclone.",
 		Services: []application.Service{
 			application.NewService(&backend.SyncService{}),
-			application.NewService(&backend.LoadProjectConfigService{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

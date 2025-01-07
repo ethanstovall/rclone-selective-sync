@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import {LoadProjectConfigService} from "../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
+import {SyncService, RcloneAction} from "../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import {Events, WML} from "@wailsio/runtime";
 
 function App() {
@@ -12,10 +12,10 @@ function App() {
     // if (!localName) {
     //   localName = 'anonymous';
     // }
-    LoadProjectConfigService.LoadProjectConfig("Test Project").then(([config, err]) => {
-      console.log(config);
+    SyncService.ExecuteRcloneAction("Global Resources", RcloneAction.PUSH).then((output) => {
+      console.log(output);
     }).catch((err: any) => {
-      console.log(err);
+      console.error(err);
     });
   }
 
