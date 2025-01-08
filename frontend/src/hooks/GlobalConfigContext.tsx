@@ -3,7 +3,7 @@ import { GlobalConfig } from "../../bindings/github.com/ethanstovall/rclone-sele
 import { ConfigService } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 
 interface GlobalConfigContextProps {
-    globalConfig: GlobalConfig;
+    globalConfig: GlobalConfig | undefined;
     selectedProject: string | undefined;
 }
 
@@ -26,7 +26,7 @@ const useGlobalConfig = () => {
 };
 
 const GlobalConfigContextProvider = ({ children }) => {
-    const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(undefined);
+    const [globalConfig, setGlobalConfig] = useState<GlobalConfig | undefined>(undefined);
     const [selectedProject, setSelectedProject] = useState<string | undefined>(undefined);
 
     useEffect(() => {
