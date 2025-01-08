@@ -21,17 +21,19 @@ var assets embed.FS
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
 func main() {
+	// Instantiate the ConfigManager instance that will be passed to all services. Just start with nil config.
+	configManager := backend.NewConfigManager(nil, nil)
 
-	// Load the user's app configuration.
-	globalConfigLoadErr := backend.LoadGlobalConfig()
-	if globalConfigLoadErr != nil {
-		log.Fatalf("Failed to initialize Rclone remote configuration: %v", globalConfigLoadErr)
-	}
-	// Load the initial selected project's configuration.
-	_, projectConfigLoadErr := backend.LoadProjectConfig(backend.ConfigInstance.SelectedProject)
-	if projectConfigLoadErr != nil {
-		log.Fatalf("Failed to initialize project configuration for selected project: %v", projectConfigLoadErr)
-	}
+	// // Load the user's app configuration.
+	// globalConfigLoadErr := backend.LoadGlobalConfig()
+	// if globalConfigLoadErr != nil {
+	// 	log.Fatalf("Failed to initialize Rclone remote configuration: %v", globalConfigLoadErr)
+	// }
+	// // Load the initial selected project's configuration.
+	// _, projectConfigLoadErr := backend.LoadProjectConfig(backend.ConfigInstance.SelectedProject)
+	// if projectConfigLoadErr != nil {
+	// 	log.Fatalf("Failed to initialize project configuration for selected project: %v", projectConfigLoadErr)
+	// }
 
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
@@ -42,7 +44,8 @@ func main() {
 		Name:        "rclone-selective-sync",
 		Description: "An application allowing selective syncing of subfolders in a remote storage bucket using Rclone.",
 		Services: []application.Service{
-			application.NewService(&backend.SyncService{}),
+			application.NewService(backend.NewConfigService(configManager)),
+			application.NewService(backend.NewSyncService(configManager)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

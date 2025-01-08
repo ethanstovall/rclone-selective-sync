@@ -4,11 +4,17 @@ import (
 	"fmt"
 )
 
-type SyncService struct{}
+type SyncService struct {
+	configManager *ConfigManager
+}
 
-func (s *SyncService) ExecuteRcloneAction(targetFolder string, action RcloneAction) (string, error) {
-	remoteConfig := ConfigInstance.Remotes[ConfigInstance.SelectedProject]
-	projectConfig, exists := CurrentProjectConfig.Folders[targetFolder]
+func NewSyncService(configManager *ConfigManager) *SyncService {
+	return &SyncService{configManager: configManager}
+}
+
+func (ss *SyncService) ExecuteRcloneAction(targetFolder string, action RcloneAction) (string, error) {
+	remoteConfig := ss.configManager.GetGlobalConfig().Remotes[ss.configManager.GetGlobalConfig().SelectedProject]
+	projectConfig, exists := ss.configManager.GetProjectConfig().Folders[targetFolder]
 	if !exists {
 		return "", fmt.Errorf("target folder not found: %s", targetFolder)
 	}

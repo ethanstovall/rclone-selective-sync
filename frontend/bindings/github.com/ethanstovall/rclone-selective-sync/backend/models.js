@@ -6,6 +6,45 @@
 // @ts-ignore: Unused imports
 import {Create as $Create} from "@wailsio/runtime";
 
+export class GlobalConfig {
+    /**
+     * Creates a new GlobalConfig instance.
+     * @param {Partial<GlobalConfig>} [$$source = {}] - The source object to create the GlobalConfig.
+     */
+    constructor($$source = {}) {
+        if (!("selected_project" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["selected_project"] = "";
+        }
+        if (!("remotes" in $$source)) {
+            /**
+             * @member
+             * @type {{ [_: string]: RemoteConfig }}
+             */
+            this["remotes"] = {};
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GlobalConfig instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {GlobalConfig}
+     */
+    static createFrom($$source = {}) {
+        const $$createField1_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("remotes" in $$parsedSource) {
+            $$parsedSource["remotes"] = $$createField1_0($$parsedSource["remotes"]);
+        }
+        return new GlobalConfig(/** @type {Partial<GlobalConfig>} */($$parsedSource));
+    }
+}
+
 /**
  * @readonly
  * @enum {string}
@@ -18,6 +57,71 @@ export const RcloneAction = {
 
     PUSH: "PUSH",
     PULL: "PULL",
-    COPY_TO: "COPY_TO",
-    COPY_FROM: "COPY_FROM",
 };
+
+export class RemoteConfig {
+    /**
+     * Creates a new RemoteConfig instance.
+     * @param {Partial<RemoteConfig>} [$$source = {}] - The source object to create the RemoteConfig.
+     */
+    constructor($$source = {}) {
+        if (!("remote_name" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["remote_name"] = "";
+        }
+        if (!("bucket_name" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["bucket_name"] = "";
+        }
+        if (!("type" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["type"] = "";
+        }
+        if (!("account" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["account"] = "";
+        }
+        if (!("key" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["key"] = "";
+        }
+        if (!("local_path" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["local_path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RemoteConfig instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {RemoteConfig}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RemoteConfig(/** @type {Partial<RemoteConfig>} */($$parsedSource));
+    }
+}
+
+// Private type creation functions
+const $$createType0 = RemoteConfig.createFrom;
+const $$createType1 = $Create.Map($Create.Any, $$createType0);
