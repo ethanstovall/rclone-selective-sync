@@ -6,6 +6,41 @@
 // @ts-ignore: Unused imports
 import {Create as $Create} from "@wailsio/runtime";
 
+export class FolderConfig {
+    /**
+     * Creates a new FolderConfig instance.
+     * @param {Partial<FolderConfig>} [$$source = {}] - The source object to create the FolderConfig.
+     */
+    constructor($$source = {}) {
+        if (!("remote_path" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["remote_path"] = "";
+        }
+        if (!("local_path" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["local_path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FolderConfig instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {FolderConfig}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FolderConfig(/** @type {Partial<FolderConfig>} */($$parsedSource));
+    }
+}
+
 export class GlobalConfig {
     /**
      * Creates a new GlobalConfig instance.
@@ -42,6 +77,45 @@ export class GlobalConfig {
             $$parsedSource["remotes"] = $$createField1_0($$parsedSource["remotes"]);
         }
         return new GlobalConfig(/** @type {Partial<GlobalConfig>} */($$parsedSource));
+    }
+}
+
+export class ProjectConfig {
+    /**
+     * Creates a new ProjectConfig instance.
+     * @param {Partial<ProjectConfig>} [$$source = {}] - The source object to create the ProjectConfig.
+     */
+    constructor($$source = {}) {
+        if (!("allow_global_sync" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["allow_global_sync"] = false;
+        }
+        if (!("folders" in $$source)) {
+            /**
+             * @member
+             * @type {{ [_: string]: FolderConfig }}
+             */
+            this["folders"] = {};
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProjectConfig instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {ProjectConfig}
+     */
+    static createFrom($$source = {}) {
+        const $$createField1_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("folders" in $$parsedSource) {
+            $$parsedSource["folders"] = $$createField1_0($$parsedSource["folders"]);
+        }
+        return new ProjectConfig(/** @type {Partial<ProjectConfig>} */($$parsedSource));
     }
 }
 
@@ -125,3 +199,5 @@ export class RemoteConfig {
 // Private type creation functions
 const $$createType0 = RemoteConfig.createFrom;
 const $$createType1 = $Create.Map($Create.Any, $$createType0);
+const $$createType2 = FolderConfig.createFrom;
+const $$createType3 = $Create.Map($Create.Any, $$createType2);

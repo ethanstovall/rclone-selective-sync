@@ -23,18 +23,18 @@ func NewConfigService(configManager *ConfigManager) *ConfigService {
 
 // Navigate to the specified project directory and find the sync.json config file. If it is not found,
 // create a blank one.
-func (cs *ConfigService) LoadProjectConfig(selectedProject string) (string, error) {
+func (cs *ConfigService) LoadProjectConfig(selectedProject string) (ProjectConfig, error) {
 	var err error
+	// Create a new default config file
+	defaultConfig := &ProjectConfig{}
 	if selectedProject == "" {
-		return "{}", errors.New("no project was selected; cannot load config")
+		return *defaultConfig, errors.New("no project was selected; cannot load config")
 	}
 	projectPath := cs.configManager.globalConfig.Remotes[cs.configManager.globalConfig.SelectedProject].LocalPath
 	configFile := filepath.Join(projectPath, "sync.json")
 
 	// Load or create the config file
 	if _, fileErr := os.Stat(configFile); os.IsNotExist(fileErr) {
-		// Create a new default config file
-		defaultConfig := &ProjectConfig{}
 		if saveErr := saveConfig(configFile, defaultConfig); saveErr != nil {
 			err = fmt.Errorf("failed to create default config file: %v", saveErr)
 		}
@@ -49,16 +49,16 @@ func (cs *ConfigService) LoadProjectConfig(selectedProject string) (string, erro
 		}
 		cs.configManager.SetProjectConfig(loadedConfig)
 	}
-	if err != nil {
-		return "", err
-	}
-	jsonPayload, err := cs.configManager.GetProjectConfig().ToJSON()
-	return jsonPayload, err
+	return *cs.configManager.GetProjectConfig(), err
 }
 
 // Load the global configuration. This configuration determines what the Rclone remotes
-// are, and where their corresponding local project folders are found.
-func (cs *ConfigService) LoadGlobalConfig() (GlobalConfig, error) {
+// are, and where their corresponding local project folders are found. Note that we return
+// the entire configuration object, in addition to the selected project string. The frontend
+// doesn't need the entire global configuration, so the selected project name should be
+// enough to allow user selection.
+// TODO Don't expose the application keys in the frontend; send only the remote names.
+func (cs *ConfigService) LoadGlobalConfig() (GlobalConfig, string, error) {
 	var err error
 	homeDir, homeErr := os.UserHomeDir()
 	if homeErr != nil {
@@ -96,8 +96,7 @@ func (cs *ConfigService) LoadGlobalConfig() (GlobalConfig, error) {
 		}
 		cs.configManager.SetGlobalConfig(loadedConfig)
 	}
-	// jsonPayload, err := cs.configManager.GetGlobalConfig().ToJSON()
-	return *cs.configManager.GetGlobalConfig(), err
+	return *cs.configManager.GetGlobalConfig(), cs.configManager.GetGlobalConfig().SelectedProject, err
 }
 
 // saveConfig writes the Config struct to a file in JSON format

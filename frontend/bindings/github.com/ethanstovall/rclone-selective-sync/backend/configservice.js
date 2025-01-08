@@ -17,13 +17,18 @@ import * as $models from "./models.js";
 
 /**
  * Load the global configuration. This configuration determines what the Rclone remotes
- * are, and where their corresponding local project folders are found.
- * @returns {Promise<$models.GlobalConfig> & { cancel(): void }}
+ * are, and where their corresponding local project folders are found. Note that we return
+ * the entire configuration object, in addition to the selected project string. The frontend
+ * doesn't need the entire global configuration, so the selected project name should be
+ * enough to allow user selection.
+ * TODO Don't expose the application keys in the frontend; send only the remote names.
+ * @returns {Promise<[$models.GlobalConfig, string]> & { cancel(): void }}
  */
 export function LoadGlobalConfig() {
     let $resultPromise = /** @type {any} */($Call.ByID(1686438339));
     let $typingPromise = /** @type {any} */($resultPromise.then(($result) => {
-        return $$createType0($result);
+        $result[0] = $$createType0($result[0]);
+        return $result;
     }));
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
@@ -33,12 +38,17 @@ export function LoadGlobalConfig() {
  * Navigate to the specified project directory and find the sync.json config file. If it is not found,
  * create a blank one.
  * @param {string} selectedProject
- * @returns {Promise<string> & { cancel(): void }}
+ * @returns {Promise<$models.ProjectConfig> & { cancel(): void }}
  */
 export function LoadProjectConfig(selectedProject) {
     let $resultPromise = /** @type {any} */($Call.ByID(2892494869, selectedProject));
-    return $resultPromise;
+    let $typingPromise = /** @type {any} */($resultPromise.then(($result) => {
+        return $$createType1($result);
+    }));
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 // Private type creation functions
 const $$createType0 = $models.GlobalConfig.createFrom;
+const $$createType1 = $models.ProjectConfig.createFrom;

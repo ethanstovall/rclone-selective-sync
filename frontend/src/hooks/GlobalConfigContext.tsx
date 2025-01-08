@@ -4,10 +4,12 @@ import {ConfigService} from "../../bindings/github.com/ethanstovall/rclone-selec
 
 interface GlobalConfigContextProps {
     globalConfig: GlobalConfig;
+    selectedProject: string | undefined;
 }
 
 const GlobalConfigContext = createContext<GlobalConfigContextProps>({
     globalConfig: undefined,
+    selectedProject: undefined,
 })
 
 // Global config consumer hook.
@@ -24,11 +26,13 @@ const useGlobalConfig = () => {
 };
 
 const GlobalConfigContextProvider = ({children}) => {
-    const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(null);
+    const [globalConfig, setGlobalConfig] = useState<GlobalConfig>(undefined);
+    const [selectedProject, setSelectedProject] = useState<string | undefined>(undefined);
     
     useEffect(() => {
-    ConfigService.LoadGlobalConfig().then((loadedGlobalConfig: GlobalConfig) => {
+    ConfigService.LoadGlobalConfig().then(([loadedGlobalConfig, selectedProject]: [GlobalConfig, string]) => {
         setGlobalConfig(loadedGlobalConfig);
+        setSelectedProject(selectedProject);
     }).catch((err: any) => {
         console.error(err);
     })
@@ -36,7 +40,7 @@ const GlobalConfigContextProvider = ({children}) => {
 
     return (
         // The Provider gives access to the context to its children.
-        <GlobalConfigContext.Provider value={globalConfig}>
+        <GlobalConfigContext.Provider value={{globalConfig, selectedProject}}>
             {children}
         </GlobalConfigContext.Provider>
     );
