@@ -1,7 +1,7 @@
 // import {Events, WML} from "@wailsio/runtime";
 import Project from './pages/Project.js';
 import { GlobalConfigContextProvider } from './hooks/GlobalConfigContext.js';
-import { createTheme, ThemeProvider, useMediaQuery } from '@mui/material';
+import { Container, createTheme, CssBaseline, Paper, ThemeProvider, useMediaQuery } from '@mui/material';
 import { deepPurple, indigo } from '@mui/material/colors';
 import { useState } from 'react';
 
@@ -18,8 +18,9 @@ function App() {
   // Determine whether the user's system preference is for dark mode. Note this has no effect outside of
   // a browser, but can't hurt to include.
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme:dark)')
+  prefersDarkMode;
   // TODO expose this in a settings page.
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(prefersDarkMode);
+  const [isDarkMode, _] = useState<boolean>(true);
 
   const appTheme = createTheme({
     palette: {
@@ -38,7 +39,10 @@ function App() {
   return (
     <ThemeProvider theme={appTheme}>
       <GlobalConfigContextProvider>
-        <Project />
+        <CssBaseline />
+        <Container component={Paper} maxWidth={false} style={{ height: "100vh", width: "100vw", padding: 10 }}>
+          <Project />
+        </Container>
       </GlobalConfigContextProvider>
     </ThemeProvider>
   )
