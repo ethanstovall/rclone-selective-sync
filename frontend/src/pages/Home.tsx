@@ -3,7 +3,7 @@ import { useGlobalConfig } from "../hooks/GlobalConfigContext";
 import { useEffect } from "react";
 
 function Home() {
-    const {globalConfig, selectedProject} = useGlobalConfig();
+    const { globalConfig, selectedProject } = useGlobalConfig();
 
     useEffect(() => {
         console.warn(globalConfig);
@@ -15,7 +15,7 @@ function Home() {
             <Typography>{JSON.stringify(globalConfig)}</Typography>
         </Container>
     )
-    
+
 }
 
 export default Home

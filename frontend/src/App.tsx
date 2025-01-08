@@ -13,9 +13,9 @@ function App() {
   // }, []);
   return (
     <GlobalConfigContextProvider>
-      <Home/>
+      <Home />
     </GlobalConfigContextProvider>
-      
+
   )
 }
 
