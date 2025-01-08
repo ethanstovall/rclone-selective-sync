@@ -1,7 +1,15 @@
 build/
 # Ignore node_modules in the frontend directory
 frontend/node_modules/
-
+# Ignore bin
+bin/
+# Ignore dist
+frontend/dist/assets/
+frontend/dist/index.html
+# Ignore .task
+.task/
+# Ignore bin
+bin/
 # Ignore other common unnecessary files.
 *.log
 *.env
