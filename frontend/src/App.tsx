@@ -26,8 +26,8 @@ function App() {
     palette: {
       mode: (isDarkMode) ? "dark" : "light",
       primary: {
-        main: indigo[700],
-        dark: indigo[900],
+        main: indigo[500],
+        dark: indigo[700],
       },
       secondary: {
         main: deepPurple[200],
