@@ -1,11 +1,5 @@
 package backend
 
-// Service structure for project-related operations.
-type ProjectConfigService struct {
-	remoteConfig         *RemoteConfig
-	currentProjectConfig *ProjectConfig
-}
-
 type ProjectConfig struct {
 	AllowGlobalSync bool                    `json:"allow_global_sync"`
 	Folders         map[string]FolderConfig `json:"folders"`
