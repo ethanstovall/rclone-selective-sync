@@ -1,4 +1,4 @@
-import { Box, Container, Typography } from "@mui/material";
+import { Container } from "@mui/material";
 import { useGlobalConfig } from "../hooks/GlobalConfigContext";
 import { useEffect } from "react";
 import FolderTree from "../components/Project/FolderTree";

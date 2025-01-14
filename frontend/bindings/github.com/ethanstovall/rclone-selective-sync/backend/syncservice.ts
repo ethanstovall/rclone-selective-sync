@@ -9,7 +9,18 @@ import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
-export function ExecuteRcloneAction(targetFolder: string, action: $models.RcloneAction): Promise<string> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1430199943, targetFolder, action) as any;
-    return $resultPromise;
+/**
+ * Error handling is done per request, and gracefully returned to the user for evaluation in the frontend.
+ */
+export function ExecuteRcloneAction(targetFolders: string[], action: $models.RcloneAction, dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1430199943, targetFolders, action, dry) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
+        return $$createType1($result);
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
+
+// Private type creation functions
+const $$createType0 = $models.RcloneActionOutput.createFrom;
+const $$createType1 = $Create.Array($$createType0);

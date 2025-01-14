@@ -5,6 +5,7 @@ import { Autocomplete, Box, Checkbox, Collapse, Container, Divider, IconButton, 
 import { ManageSearch, ExpandLess, CleaningServices, CloudUpload, CloudDownload, FolderOpen } from "@mui/icons-material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import StandardTypography from "../common/StandardTypography.tsx";
+import { dryPushFolders } from "../../services/SyncService.ts";
 
 const FolderTree: React.FunctionComponent<{
     selectedProject: string | undefined;
@@ -64,8 +65,13 @@ const FolderTree: React.FunctionComponent<{
         setSearchTerm(value);
     };
 
+    const handleDryPush = async () => {
+        const output = await dryPushFolders(selectedFolders);
+        console.warn(output);
+    }
+
     return (
-        !(isLoading) ? (
+        (!isLoading) ? (
             <Container>
                 {projectConfig && projectConfig.folders ? (
                     <List>
@@ -85,7 +91,7 @@ const FolderTree: React.FunctionComponent<{
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Push">
-                                <IconButton color="primary" onClick={() => { }}>
+                                <IconButton color="primary" onClick={handleDryPush}>
                                     <CloudUpload />
                                 </IconButton>
                             </Tooltip>

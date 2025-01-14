@@ -98,6 +98,35 @@ export enum RcloneAction {
     PULL = "PULL",
 };
 
+export class RcloneActionOutput {
+    "target_folder": string;
+    "command_output": string;
+    "command_error": any;
+
+    /** Creates a new RcloneActionOutput instance. */
+    constructor($$source: Partial<RcloneActionOutput> = {}) {
+        if (!("target_folder" in $$source)) {
+            this["target_folder"] = "";
+        }
+        if (!("command_output" in $$source)) {
+            this["command_output"] = "";
+        }
+        if (!("command_error" in $$source)) {
+            this["command_error"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RcloneActionOutput instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RcloneActionOutput {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RcloneActionOutput($$parsedSource as Partial<RcloneActionOutput>);
+    }
+}
+
 export class RemoteConfig {
     "remote_name": string;
     "bucket_name": string;

@@ -9,24 +9,33 @@ type RcloneCommand struct {
 	command *exec.Cmd
 }
 
-func NewRcloneCommand(remoteConfig RemoteConfig, remoteFolderPath string, localFolderPath string, action RcloneAction) (*RcloneCommand, error) {
+func NewRcloneCommand(remoteConfig RemoteConfig, remoteFolderPath string, localFolderPath string, action RcloneAction, dry bool) (*RcloneCommand, error) {
 	var cmd *exec.Cmd
 
 	fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, remoteFolderPath)
 	fullLocalPath := fmt.Sprintf("%s/%s", remoteConfig.LocalPath, localFolderPath)
 
+	// Build the arguments list depending on the given input
+	args := []string{}
+
 	switch action {
 	case PUSH:
-		cmd = exec.Command("rclone", "sync", fullLocalPath, fullRemotePath, "--dry-run")
+		args = append(args, "sync", fullLocalPath, fullRemotePath)
 	case PULL:
-		cmd = exec.Command("rclone", "sync", fullRemotePath, fullLocalPath, "--dry-run")
+		args = append(args, "sync", fullRemotePath, fullLocalPath)
 	// case COPY_TO:
-	// 	cmd = exec.Command("rclone", "copy", fullLocalPath, fullRemotePath)
 	// case COPY_FROM:
-	// 	cmd = exec.Command("rclone", "copy", fullRemotePath, fullLocalPath)
 	default:
 		return nil, fmt.Errorf("unsupported action: %s", action)
 	}
+
+	// Add the "--dry-run" flag if specified
+	if dry {
+		args = append(args, "--dry-run")
+	}
+
+	// Construct the command with the appropriate arguments
+	cmd = exec.Command("rclone", args...)
 
 	return &RcloneCommand{command: cmd}, nil
 }

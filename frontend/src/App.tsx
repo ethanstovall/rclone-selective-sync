@@ -1,7 +1,7 @@
 // import {Events, WML} from "@wailsio/runtime";
 import Project from './pages/Project.js';
 import { GlobalConfigContextProvider } from './hooks/GlobalConfigContext.js';
-import { Container, createTheme, CssBaseline, Paper, ThemeProvider, useMediaQuery } from '@mui/material';
+import { Container, createTheme, CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
 import { deepPurple, indigo } from '@mui/material/colors';
 import { useState } from 'react';
 
