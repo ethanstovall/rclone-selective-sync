@@ -40,7 +40,7 @@ function App() {
     <ThemeProvider theme={appTheme}>
       <GlobalConfigContextProvider>
         <CssBaseline />
-        <Container component={Paper} maxWidth={false} style={{ height: "100vh", width: "100vw", padding: 10 }}>
+        <Container maxWidth={false} style={{ height: "100vh", width: "100vw" }}>
           <Project />
         </Container>
       </GlobalConfigContextProvider>
