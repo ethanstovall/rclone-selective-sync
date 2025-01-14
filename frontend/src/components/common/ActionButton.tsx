@@ -24,15 +24,17 @@ const ActionButton: React.FunctionComponent<ActionButtonProps> = ({
 }) => {
     return (
         <Tooltip title={tooltip}>
-            <Button
-                variant={variant}
-                color={color}
-                onClick={onClick}
-                disabled={disabled || loading}
-                autoFocus={autofocus}
-            >
-                {(loading) ? <CircularProgress /> : text}
-            </Button>
+            <span>
+                <Button
+                    variant={variant}
+                    color={color}
+                    onClick={onClick}
+                    disabled={disabled || loading}
+                    autoFocus={autofocus}
+                >
+                    {(loading) ? <CircularProgress /> : text}
+                </Button>
+            </span>
         </Tooltip>
     );
 };

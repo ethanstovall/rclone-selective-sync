@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -16,7 +17,7 @@ func NewSyncService(configManager *ConfigManager) *SyncService {
 type RcloneActionOutput struct {
 	TargetFolder  string `json:"target_folder"`
 	CommandOutput string `json:"command_output"`
-	CommandError  error  `json:"command_error"`
+	CommandError  string `json:"command_error"`
 }
 
 // Error handling is done per request, and gracefully returned to the user for evaluation in the frontend.
@@ -35,29 +36,54 @@ func (ss *SyncService) ExecuteRcloneAction(targetFolders []string, action Rclone
 			defer wg.Done()
 
 			// Access the project config for each target folder
-			projectConfig, exists := ss.configManager.GetProjectConfig().Folders[targetFolder]
+			folderConfig, exists := ss.configManager.GetProjectConfig().Folders[targetFolder]
 			if !exists {
-				resultChan <- RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: fmt.Errorf("target folder not found: %s", targetFolder)}
+				resultChan <- RcloneActionOutput{
+					TargetFolder:  targetFolder,
+					CommandOutput: "",
+					CommandError:  fmt.Errorf("target folder configuration not found: %s", targetFolder).Error(),
+				}
+				return
+			}
+
+			// Get the remote config from the global config
+			remoteConfig := ss.configManager.GetGlobalConfig().Remotes[ss.configManager.GetGlobalConfig().SelectedProject]
+			fullLocalPath := fmt.Sprintf("%s/%s", remoteConfig.LocalPath, folderConfig.LocalPath)
+			fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, folderConfig.RemotePath)
+
+			// Check if the local directory exists
+			if _, err := os.Stat(fullLocalPath); os.IsNotExist(err) {
+				resultChan <- RcloneActionOutput{
+					TargetFolder:  targetFolder,
+					CommandOutput: "",
+					CommandError:  fmt.Errorf("local path does not exist: %s", fullLocalPath).Error(),
+				}
+				return
+			} else if err != nil {
+				resultChan <- RcloneActionOutput{
+					TargetFolder:  targetFolder,
+					CommandOutput: "",
+					CommandError:  fmt.Errorf("error accessing local path %s: %v", fullLocalPath, err).Error(),
+				}
 				return
 			}
 
 			// Create the Rclone command for this folder
-			remoteConfig := ss.configManager.GetGlobalConfig().Remotes[ss.configManager.GetGlobalConfig().SelectedProject]
-			command, err := NewRcloneCommand(remoteConfig, projectConfig.RemotePath, projectConfig.LocalPath, action, dry)
+			command, err := NewRcloneCommand(fullRemotePath, fullLocalPath, action, dry)
 			if err != nil {
-				resultChan <- RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: err}
+				resultChan <- RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: err.Error()}
 				return
 			}
 
 			// Execute the command and collect the output
 			output, err := command.Exec()
 			if err != nil {
-				resultChan <- RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: err}
+				resultChan <- RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: err.Error()}
 				return
 			}
 
 			// Send the result to the result channel
-			resultChan <- RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: output, CommandError: nil}
+			resultChan <- RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: output, CommandError: ""}
 		}(targetFolder)
 	}
 

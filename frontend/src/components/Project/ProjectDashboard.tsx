@@ -76,6 +76,7 @@ const ProjectDashboard: React.FunctionComponent = () => {
             // Close the finalize dialog if the final run just completed
             setIsRcloneDialogOpen(false);
             setRcloneActionDialogOutput(null);
+            setTargetFolders([]);
         }
     }
 
@@ -142,7 +143,7 @@ const ProjectDashboard: React.FunctionComponent = () => {
                                 isRunningRcloneAction={isRunningRcloneAction}
                                 isOpen={isRcloneDialogOpen}
                                 handleClose={() => { setIsRcloneDialogOpen(false); setRcloneActionDialogOutput(null); setTargetFolders([]); }}
-                                runRcloneCommand={() => { ExecuteRcloneAction(targetFolders, activeRcloneAction, false) }}
+                                runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
                             />
                         </Container>
                     ) : (

@@ -101,7 +101,7 @@ export enum RcloneAction {
 export class RcloneActionOutput {
     "target_folder": string;
     "command_output": string;
-    "command_error": any;
+    "command_error": string;
 
     /** Creates a new RcloneActionOutput instance. */
     constructor($$source: Partial<RcloneActionOutput> = {}) {
@@ -112,7 +112,7 @@ export class RcloneActionOutput {
             this["command_output"] = "";
         }
         if (!("command_error" in $$source)) {
-            this["command_error"] = null;
+            this["command_error"] = "";
         }
 
         Object.assign(this, $$source);

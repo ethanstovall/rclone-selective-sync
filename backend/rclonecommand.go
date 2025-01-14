@@ -9,11 +9,8 @@ type RcloneCommand struct {
 	command *exec.Cmd
 }
 
-func NewRcloneCommand(remoteConfig RemoteConfig, remoteFolderPath string, localFolderPath string, action RcloneAction, dry bool) (*RcloneCommand, error) {
+func NewRcloneCommand(fullRemotePath string, fullLocalPath string, action RcloneAction, dry bool) (*RcloneCommand, error) {
 	var cmd *exec.Cmd
-
-	fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, remoteFolderPath)
-	fullLocalPath := fmt.Sprintf("%s/%s", remoteConfig.LocalPath, localFolderPath)
 
 	// Build the arguments list depending on the given input
 	args := []string{}
@@ -46,6 +43,5 @@ func (c *RcloneCommand) Exec() (string, error) {
 		return "", fmt.Errorf("command execution failed: %w. Output: %s", err, string(output))
 	}
 	stringOutput := string(output)
-	fmt.Println("Command output:", stringOutput)
 	return stringOutput, nil
 }

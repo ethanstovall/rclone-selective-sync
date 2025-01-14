@@ -34,6 +34,14 @@ function App() {
         dark: deepPurple[400],
       },
     },
+    // Override because buttons don't seem to grow to accommodate text
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: { minWidth: "120px", minHeight: "50px" }
+        }
+      }
+    }
   });
 
   return (

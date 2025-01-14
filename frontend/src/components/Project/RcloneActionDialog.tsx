@@ -2,11 +2,13 @@ import * as React from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import { RcloneAction, RcloneActionOutput } from '../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend';
 import { LinearProgress } from '@mui/material';
 import ActionButton from '../common/ActionButton';
+import RcloneActionOutputTabs from './RcloneActionOutputTabs';
+import Container50vh from '../common/Container50vh';
+import { useMemo } from 'react';
 
 interface RcloneActionDialogProps {
     action: RcloneAction;
@@ -25,6 +27,11 @@ const RcloneActionDialog: React.FunctionComponent<RcloneActionDialogProps> = ({
     handleClose,
     runRcloneCommand,
 }) => {
+    // Determine if there were any errors. If so, the user cannot finalize the Rclone action.
+    const isAnyError: boolean = useMemo(() => {
+        return !rcloneDryOutput?.every((output) => (output.command_error.length === 0))
+    }, [rcloneDryOutput])
+
     const descriptionElementRef = React.useRef<HTMLElement>(null);
     React.useEffect(() => {
         if (isOpen) {
@@ -48,20 +55,17 @@ const RcloneActionDialog: React.FunctionComponent<RcloneActionDialogProps> = ({
             <DialogTitle id="rclone-command-dialog-title">{`Finalize Rclone ${action}?`}</DialogTitle>
             <DialogContent dividers>
                 {
-                    (rcloneDryOutput !== null) ? (
-                        <DialogContentText
-                            id="rclone-command-dialog-description"
-                            ref={descriptionElementRef}
-                            tabIndex={-1}
-                        >
-                            {
-                                rcloneDryOutput.map(
-                                    (output) => output.command_output
-                                ).join('\n')}
-                        </DialogContentText>
-                    ) : (
-                        <LinearProgress />
-                    )
+                    <Container50vh>
+                        {(rcloneDryOutput !== null) ? (
+                            <RcloneActionOutputTabs
+                                rcloneActionOuputs={rcloneDryOutput}
+                                isAnyError={isAnyError}
+                            />
+                        ) : (
+                            <LinearProgress />
+                        )}
+                    </Container50vh>
+
                 }
 
             </DialogContent>
@@ -77,7 +81,8 @@ const RcloneActionDialog: React.FunctionComponent<RcloneActionDialogProps> = ({
                     variant="text"
                 />
                 <ActionButton
-                    disabled={isRunningRcloneAction}
+                    loading={isRunningRcloneAction}
+                    disabled={isAnyError}
                     onClick={runRcloneCommand}
                     text="Confirm"
                     autofocus
