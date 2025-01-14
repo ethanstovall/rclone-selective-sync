@@ -5,11 +5,13 @@ import { ConfigService } from "../../bindings/github.com/ethanstovall/rclone-sel
 interface GlobalConfigContextProps {
     globalConfig: GlobalConfig | undefined;
     selectedProject: string | undefined;
+    isLoadingGlobalConfig: boolean;
 }
 
 const GlobalConfigContext = createContext<GlobalConfigContextProps>({
     globalConfig: undefined,
     selectedProject: undefined,
+    isLoadingGlobalConfig: true,
 })
 
 // Global config consumer hook.
@@ -28,19 +30,23 @@ const useGlobalConfig = () => {
 const GlobalConfigContextProvider = ({ children }) => {
     const [globalConfig, setGlobalConfig] = useState<GlobalConfig | undefined>(undefined);
     const [selectedProject, setSelectedProject] = useState<string | undefined>(undefined);
+    const [isLoadingGlobalConfig, setIsLoadingGlobalConfig] = useState<boolean>(true);
 
     useEffect(() => {
+        setIsLoadingGlobalConfig(true)
         ConfigService.LoadGlobalConfig().then(([loadedGlobalConfig, selectedProject]: [GlobalConfig, string]) => {
             setGlobalConfig(loadedGlobalConfig);
             setSelectedProject(selectedProject);
         }).catch((err: any) => {
             console.error(err);
+        }).finally(() => {
+            setIsLoadingGlobalConfig(false);
         })
     }, []);
 
     return (
         // The Provider gives access to the context to its children.
-        <GlobalConfigContext.Provider value={{ globalConfig, selectedProject }}>
+        <GlobalConfigContext.Provider value={{ globalConfig, selectedProject, isLoadingGlobalConfig }}>
             {children}
         </GlobalConfigContext.Provider>
     );
