@@ -46,6 +46,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(backend.NewConfigService(configManager)),
 			application.NewService(backend.NewSyncService(configManager)),
+			application.NewService(backend.NewFileSystemService(configManager)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

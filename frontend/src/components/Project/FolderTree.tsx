@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Box, Checkbox, Collapse, Divider, IconButton, List, ListItem, ListItemButton, ListItemIcon, Skeleton, Tooltip, Typography } from "@mui/material";
+import { Box, Checkbox, Collapse, Divider, List, ListItem, ListItemButton, ListItemIcon, Skeleton, Typography } from "@mui/material";
 import { Info, ExpandLess, FolderOpen } from "@mui/icons-material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import StandardTypography from "../common/StandardTypography.tsx";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext.tsx";
+import ActionIconButton from "../common/ActionIconButton.tsx";
+import { OpenFolder } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/filesystemservice.ts";
 
 const FolderTree: React.FunctionComponent<{
     projectConfig: ProjectConfig | undefined;
@@ -44,6 +46,15 @@ const FolderTree: React.FunctionComponent<{
         setTargetFolders(newSelected);
     };
 
+    // Open the selected folder in the user's file explorer
+    const handleOpenFolder = async (targetFolder: string) => {
+        try {
+            await OpenFolder(targetFolder)
+        } catch (e: any) {
+            console.error(e);
+        }
+    }
+
     return (
         (projectConfig !== undefined) ? (
             <List>
@@ -67,17 +78,18 @@ const FolderTree: React.FunctionComponent<{
 
                                 {/* Right-aligned inspect button */}
                                 <Box sx={{ display: "flex", gap: 1, alignItems: "center", ml: "auto" }}>
-                                    <Tooltip title="Open Folder">
-                                        <IconButton color="secondary">
-                                            <FolderOpen />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Info">
-                                        <IconButton color="secondary" onClick={() => handleInspectFolder(folderName)}>
-                                            {inspectedFolders[folderName] ? <ExpandLess /> : <Info />}
-                                        </IconButton>
-                                    </Tooltip>
-
+                                    <ActionIconButton
+                                        tooltip="Open Folder"
+                                        color="secondary"
+                                        onClick={() => { handleOpenFolder(folderName) }}
+                                        inputIcon={FolderOpen}
+                                    />
+                                    <ActionIconButton
+                                        tooltip="Info"
+                                        color="secondary"
+                                        onClick={() => { handleInspectFolder(folderName) }}
+                                        inputIcon={inspectedFolders[folderName] ? ExpandLess : Info}
+                                    />
                                 </Box>
                             </ListItem>
                             <Collapse in={inspectedFolders[folderName]} timeout="auto" unmountOnExit>

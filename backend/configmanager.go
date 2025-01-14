@@ -34,6 +34,30 @@ func (cm *ConfigManager) GetGlobalConfig() *GlobalConfig {
 	return cm.globalConfig
 }
 
+// Set the selected project
+func (cm *ConfigManager) SetSelectedProject(selectedProject string) {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	cm.globalConfig.SelectedProject = selectedProject
+}
+
+// Get the selected project
+func (cm *ConfigManager) GetSelectedProject() string {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	return cm.globalConfig.SelectedProject
+}
+
+// Get the selected project's remote config
+func (cm *ConfigManager) GetSelectedProjectRemoteConfig() *RemoteConfig {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	if remoteConfig, exists := cm.globalConfig.Remotes[cm.globalConfig.SelectedProject]; exists {
+		return &remoteConfig
+	}
+	return nil // Handle the case where the SelectedProject does not exist
+}
+
 // SetGlobalConfig updates the global config
 func (cm *ConfigManager) SetGlobalConfig(global *GlobalConfig) {
 	cm.mu.Lock()
