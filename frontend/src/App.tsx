@@ -40,7 +40,7 @@ function App() {
     <ThemeProvider theme={appTheme}>
       <GlobalConfigContextProvider>
         <CssBaseline />
-        <Container maxWidth={false} style={{ height: "100vh", width: "100vw" }}>
+        <Container maxWidth={false} style={{ height: "100vh", width: "100vw", overflow: "scroll" }}>
           <Project />
         </Container>
       </GlobalConfigContextProvider>

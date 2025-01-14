@@ -2,35 +2,43 @@ import { useEffect, useState } from "react";
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { ConfigService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 import { Autocomplete, Box, Checkbox, Collapse, Container, Divider, IconButton, List, ListItem, ListItemButton, ListItemIcon, Paper, Skeleton, TextField, Tooltip, Typography } from "@mui/material";
-import { ManageSearch, ExpandLess, CleaningServices, CloudUpload, CloudDownload, FolderOpen } from "@mui/icons-material";
+import { Info, ExpandLess, CleaningServices, CloudUpload, CloudDownload, FolderOpen } from "@mui/icons-material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import StandardTypography from "../common/StandardTypography.tsx";
 import { dryPushFolders } from "../../services/SyncService.ts";
 
 const FolderTree: React.FunctionComponent<{
     selectedProject: string | undefined;
-}> = ({ selectedProject }) => {
+    remoteRoot: string | undefined;
+    localRoot: string | undefined;
+}> = ({ selectedProject, remoteRoot, localRoot }) => {
+    // State for project configuration
     const [projectConfig, setProjectConfig] = useState<ProjectConfig | undefined>(undefined);
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [inspectedFolders, setInspectedFolders] = useState<Record<string, boolean>>({});
+    const [isLoadingProject, setIsLoadingProject] = useState<boolean>(true);
 
+    // State for project interaction
+    const [inspectedFolders, setInspectedFolders] = useState<Record<string, boolean>>({});
     const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
 
+    // State for project list filtering
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredFolders, setFilteredFolders] = useState<string[] | undefined>(undefined);
+
+    // State for Rclone command output
+    // const []
 
     useEffect(() => {
         if (selectedProject === undefined) {
             return;
         }
-        setIsLoading(true);
+        setIsLoadingProject(true);
         ConfigService.LoadProjectConfig(selectedProject).then((loadedProjectConfig: ProjectConfig) => {
             setProjectConfig(loadedProjectConfig);
             setFilteredFolders(Object.entries(loadedProjectConfig.folders).map(([folderName, folderConfig]) => (folderName)));
         }).catch((err: any) => {
             console.error(err);
         }).finally(() => {
-            setIsLoading(false);
+            setIsLoadingProject(false);
         })
     }, [selectedProject]);
 
@@ -71,7 +79,7 @@ const FolderTree: React.FunctionComponent<{
     }
 
     return (
-        (!isLoading) ? (
+        (!isLoadingProject) ? (
             <Container>
                 {projectConfig && projectConfig.folders ? (
                     <List>
@@ -126,9 +134,9 @@ const FolderTree: React.FunctionComponent<{
                                                     <FolderOpen />
                                                 </IconButton>
                                             </Tooltip>
-                                            <Tooltip title="Details">
+                                            <Tooltip title="Info">
                                                 <IconButton color="secondary" onClick={() => handleInspectFolder(folderName)}>
-                                                    {inspectedFolders[folderName] ? <ExpandLess /> : <ManageSearch />}
+                                                    {inspectedFolders[folderName] ? <ExpandLess /> : <Info />}
                                                 </IconButton>
                                             </Tooltip>
 
@@ -137,10 +145,10 @@ const FolderTree: React.FunctionComponent<{
                                     <Collapse in={inspectedFolders[folderName]} timeout="auto" unmountOnExit>
                                         <Box sx={{ pl: 2 }}>
                                             <Typography variant="body2" color="secondary">
-                                                Remote Path: {folderConfig.remote_path}
+                                                Remote Path: {`${remoteRoot}/${folderConfig.remote_path}`}
                                             </Typography>
                                             <Typography variant="body2" color="secondary">
-                                                Local Path: {folderConfig.local_path}
+                                                Local Path: {`${localRoot}/${folderConfig.local_path}`}
                                             </Typography>
                                         </Box>
                                     </Collapse>
