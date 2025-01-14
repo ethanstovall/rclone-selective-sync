@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ProjectConfig, RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { ConfigService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
-import { Autocomplete, Box, Container, IconButton, Paper, Skeleton, TextField, Tooltip, Typography } from "@mui/material";
+import { Autocomplete, Box, Container, Paper, Skeleton, TextField, Typography } from "@mui/material";
 import { CleaningServices, CloudUpload, CloudDownload } from "@mui/icons-material";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext.tsx";
 import FolderTree from "./FolderTree.tsx";
@@ -9,6 +9,7 @@ import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/r
 import HeaderTypography from "../common/HeaderTypography.tsx";
 import PaddedBox from "../common/PaddedBox.tsx";
 import RcloneActionDialog from "./RcloneActionDialog.tsx";
+import ActionIconButton from "../common/ActionIconButton.tsx";
 
 const ProjectDashboard: React.FunctionComponent = () => {
     // State for global config
@@ -27,7 +28,11 @@ const ProjectDashboard: React.FunctionComponent = () => {
     const [rcloneActionDialogOutput, setRcloneActionDialogOutput] = useState<RcloneActionOutput[] | null>(null);
     const [isRunningRcloneAction, setIsRunningRcloneAction] = useState<boolean>(false);
     const [isRcloneDialogOpen, setIsRcloneDialogOpen] = useState<boolean>(false);
-    const [activeRcloneCommand, setActiveRcloneCommand] = useState<RcloneAction>("" as RcloneAction);
+    const [activeRcloneAction, setActiveRcloneAction] = useState<RcloneAction>("" as RcloneAction);
+
+    const areActionButtonsDisabled = useMemo(() => {
+        return targetFolders.length === 0;
+    }, [targetFolders])
 
 
     useEffect(() => {
@@ -58,12 +63,20 @@ const ProjectDashboard: React.FunctionComponent = () => {
     };
 
     const handleRcloneAction = async (rcloneAction: RcloneAction, dry: boolean) => {
+        setActiveRcloneAction(rcloneAction);
         setIsRunningRcloneAction(true);
         setIsRcloneDialogOpen(true);
         const output = await ExecuteRcloneAction(targetFolders, rcloneAction, dry);
         setIsRunningRcloneAction(false);
-        setRcloneActionDialogOutput(output);
-        setActiveRcloneCommand(rcloneAction);
+        if (dry) {
+            // Open the finalize dialog if the dry run just completed
+            setIsRcloneDialogOpen(true);
+            setRcloneActionDialogOutput(output);
+        } else {
+            // Close the finalize dialog if the final run just completed
+            setIsRcloneDialogOpen(false);
+            setRcloneActionDialogOutput(null);
+        }
     }
 
     return (
@@ -93,21 +106,30 @@ const ProjectDashboard: React.FunctionComponent = () => {
                                     renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
                                     sx={{ width: "100%" }}
                                 />
-                                <Tooltip title="Local Remove">
-                                    <IconButton color="primary" onClick={() => { handleRcloneAction("" as RcloneAction, true) }}>
-                                        <CleaningServices />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Push">
-                                    <IconButton color="primary" onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}>
-                                        <CloudUpload />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Pull">
-                                    <IconButton color="warning" onClick={() => { handleRcloneAction(RcloneAction.PULL, true) }}>
-                                        <CloudDownload />
-                                    </IconButton>
-                                </Tooltip>
+                                <ActionIconButton
+                                    tooltip="Remove Local"
+                                    color="primary"
+                                    disabled={areActionButtonsDisabled}
+                                    loading={false}
+                                    inputIcon={CleaningServices}
+                                    onClick={() => { }}
+                                />
+                                <ActionIconButton
+                                    tooltip="Push to Remote"
+                                    color="primary"
+                                    disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
+                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PUSH}
+                                    inputIcon={CloudUpload}
+                                    onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}
+                                />
+                                <ActionIconButton
+                                    tooltip="Pull from Remote"
+                                    color="primary"
+                                    disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
+                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PULL}
+                                    inputIcon={CloudDownload}
+                                    onClick={() => { handleRcloneAction(RcloneAction.PULL, true) }}
+                                />
                             </Box>
                             <FolderTree
                                 projectConfig={projectConfig}
@@ -115,10 +137,12 @@ const ProjectDashboard: React.FunctionComponent = () => {
                                 targetFolders={targetFolders}
                                 setTargetFolders={setTargetFolders} />
                             <RcloneActionDialog
+                                action={activeRcloneAction}
                                 rcloneDryOutput={rcloneActionDialogOutput}
+                                isRunningRcloneAction={isRunningRcloneAction}
                                 isOpen={isRcloneDialogOpen}
-                                handleClose={() => { setIsRcloneDialogOpen(false); setRcloneActionDialogOutput(null); }}
-                                runRcloneCommand={() => { ExecuteRcloneAction(targetFolders, activeRcloneCommand, false) }}
+                                handleClose={() => { setIsRcloneDialogOpen(false); setRcloneActionDialogOutput(null); setTargetFolders([]); }}
+                                runRcloneCommand={() => { ExecuteRcloneAction(targetFolders, activeRcloneAction, false) }}
                             />
                         </Container>
                     ) : (
