@@ -62,6 +62,17 @@ const ProjectDashboard: React.FunctionComponent = () => {
         setSearchTerm(value);
     };
 
+    const handleDialogClose = (event, reason) => {
+        if (reason === 'backdropClick' && isRunningRcloneAction) {
+            // Don't allow the dialog window to close while an Rclone action is running in the background.
+            setIsRcloneDialogOpen(true);
+            return;
+        }
+        setIsRcloneDialogOpen(false);
+        setRcloneActionDialogOutput(null);
+        setTargetFolders([]);
+    }
+
     const handleRcloneAction = async (rcloneAction: RcloneAction, dry: boolean) => {
         setActiveRcloneAction(rcloneAction);
         setIsRunningRcloneAction(true);
@@ -142,7 +153,7 @@ const ProjectDashboard: React.FunctionComponent = () => {
                                 rcloneDryOutput={rcloneActionDialogOutput}
                                 isRunningRcloneAction={isRunningRcloneAction}
                                 isOpen={isRcloneDialogOpen}
-                                handleClose={() => { setIsRcloneDialogOpen(false); setRcloneActionDialogOutput(null); setTargetFolders([]); }}
+                                handleClose={handleDialogClose}
                                 runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
                             />
                         </Container>

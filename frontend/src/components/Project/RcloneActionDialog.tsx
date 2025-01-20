@@ -7,7 +7,6 @@ import { RcloneAction, RcloneActionOutput } from '../../../bindings/github.com/e
 import { LinearProgress } from '@mui/material';
 import ActionButton from '../common/ActionButton';
 import RcloneActionOutputTabs from './RcloneActionOutputTabs';
-import Container50vh from '../common/Container50vh';
 import { useMemo } from 'react';
 
 interface RcloneActionDialogProps {
@@ -16,7 +15,7 @@ interface RcloneActionDialogProps {
     isRunningRcloneAction: boolean;
     isOpen: boolean;
     runRcloneCommand: () => void;
-    handleClose: () => void;
+    handleClose: (event, reason) => void;
 }
 
 const RcloneActionDialog: React.FunctionComponent<RcloneActionDialogProps> = ({
@@ -53,19 +52,18 @@ const RcloneActionDialog: React.FunctionComponent<RcloneActionDialogProps> = ({
             aria-describedby="rclone-command-dialog-description"
         >
             <DialogTitle id="rclone-command-dialog-title">{`Finalize Rclone ${action}?`}</DialogTitle>
-            <DialogContent dividers>
+            <DialogContent dividers sx={{
+                height: "50vh", // Adjust this as needed for your layout
+            }}>
                 {
-                    <Container50vh>
-                        {(rcloneDryOutput !== null) ? (
-                            <RcloneActionOutputTabs
-                                rcloneActionOuputs={rcloneDryOutput}
-                                isAnyError={isAnyError}
-                            />
-                        ) : (
-                            <LinearProgress />
-                        )}
-                    </Container50vh>
-
+                    (rcloneDryOutput !== null) ? (
+                        <RcloneActionOutputTabs
+                            rcloneActionOuputs={rcloneDryOutput}
+                            isAnyError={isAnyError}
+                        />
+                    ) : (
+                        <LinearProgress />
+                    )
                 }
 
             </DialogContent>
@@ -76,7 +74,8 @@ const RcloneActionDialog: React.FunctionComponent<RcloneActionDialogProps> = ({
                 }}>
                 <ActionButton
                     disabled={isRunningRcloneAction}
-                    onClick={handleClose}
+                    // Just feed the handleClose a null for the event and reason here since they won't be used.
+                    onClick={() => { handleClose(null, null) }}
                     text="Cancel"
                     variant="text"
                 />

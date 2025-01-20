@@ -1,7 +1,6 @@
 import { Box, Paper, styled, Tab, Tabs, Typography, useTheme } from "@mui/material";
 import { RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend"
 import { useState } from "react";
-import Container50vh from "../common/Container50vh";
 
 interface StyledTabProps {
     label: string;
@@ -47,28 +46,26 @@ function TabPanel(props: TabPanelProps) {
     const { children, value, index, error, ...other } = props;
     const theme = useTheme();  // Access the theme here
     return (
-        <div
+        <Box
             role="tabpanel"
             hidden={value !== index}
             id={`tabpanel-${index}`}
             aria-labelledby={`tab-${index}`}
             {...other}
-            style={{
+            sx={{
                 whiteSpace: "pre-wrap", // Preserve newlines
                 wordWrap: "break-word", // Ensure long lines wrap
                 overflow: "auto", // Allow scrolling
+                padding: 3,
                 boxShadow: error ? `inset 0 0px 10px ${theme.palette.error.main}` : 'none', // Add box shadow for error
-                height: "100%"
                 // padding: "16px", // Optional: Adjust padding for content
                 // maxHeight: "50vh", // Optional: Limit max height for scrolling
             }}
         >
             {value === index && (
-                <Box sx={{ p: 3 }}>
-                    <Typography>{children}</Typography>
-                </Box>
+                <Typography>{children}</Typography>
             )}
-        </div>
+        </Box>
     );
 }
 
@@ -95,7 +92,11 @@ const RcloneActionOutputTabs: React.FunctionComponent<RcloneActionOutputTabsProp
     };
 
     return (
-        <Container50vh component={Paper}>
+        <Box component={Paper} sx={{
+            height: "100%",
+            display: "flex",  // flex display is important to ensure the tabs and panels fill the available space evenly
+            flexDirection: "column"
+        }}>
             <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                 <Tabs
                     value={tabValue}
@@ -118,7 +119,7 @@ const RcloneActionOutputTabs: React.FunctionComponent<RcloneActionOutputTabsProp
                     {output.command_error || output.command_output || "No output available"}
                 </TabPanel>
             ))}
-        </Container50vh>
+        </Box>
     )
 }
 
