@@ -1,9 +1,10 @@
 // import {Events, WML} from "@wailsio/runtime";
 import Project from './pages/Project.js';
-import { GlobalConfigContextProvider } from './hooks/GlobalConfigContext.js';
-import { Container, createTheme, CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
+import { createTheme, CssBaseline, ThemeProvider, useMediaQuery } from '@mui/material';
 import { deepPurple, indigo } from '@mui/material/colors';
 import { useState } from 'react';
+import RootLayout from './pages/RootLayout.js';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 function App() {
   // const [time, setTime] = useState<string>('Listening for Time event...');
@@ -46,13 +47,18 @@ function App() {
 
   return (
     <ThemeProvider theme={appTheme}>
-      <GlobalConfigContextProvider>
-        <CssBaseline />
-        <Container maxWidth={false} style={{ height: "100vh", width: "100vw", overflow: "auto" }}>
-          <Project />
-        </Container>
-      </GlobalConfigContextProvider>
-    </ThemeProvider>
+      <CssBaseline />
+      <BrowserRouter>
+        <Routes>
+          <Route path={"/"} element={
+            <RootLayout>
+              <Project />
+            </RootLayout>
+          }
+          />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider >
   )
 }
 

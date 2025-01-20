@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ProjectConfig, RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { ConfigService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
-import { Autocomplete, Box, Container, Paper, Skeleton, TextField, Typography } from "@mui/material";
+import { Autocomplete, Box, Container, Grid2, Paper, Skeleton, TextField, Typography } from "@mui/material";
 import { CleaningServices, CloudUpload, CloudDownload } from "@mui/icons-material";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext.tsx";
 import FolderTree from "./FolderTree.tsx";
@@ -92,7 +92,7 @@ const ProjectDashboard: React.FunctionComponent = () => {
     }
 
     return (
-        <Container>
+        <Grid2 container spacing={1}>
             {
                 (!isLoadingGlobalConfig) ? (
                     <PaddedBox>
@@ -165,7 +165,7 @@ const ProjectDashboard: React.FunctionComponent = () => {
                 ) : (
                     <Skeleton />
                 )}
-        </Container>
+        </Grid2>
     )
 }
 

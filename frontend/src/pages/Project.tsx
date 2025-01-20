@@ -1,8 +1,11 @@
 import ProjectDashboard from "../components/Project/ProjectDashboard";
+import { GlobalConfigContextProvider } from "../hooks/GlobalConfigContext";
 
 function Project() {
     return (
-        <ProjectDashboard />
+        <GlobalConfigContextProvider>
+            <ProjectDashboard />
+        </GlobalConfigContextProvider>
     );
 }
 
