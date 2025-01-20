@@ -53,13 +53,12 @@ const RcloneActionDialog: React.FunctionComponent<RcloneActionDialogProps> = ({
         >
             <DialogTitle id="rclone-command-dialog-title">{`Finalize Rclone ${action}?`}</DialogTitle>
             <DialogContent dividers sx={{
-                height: "50vh", // Adjust this as needed for your layout
+                height: "50vh", // This can be anything, but some unoccupied space feels right.
             }}>
                 {
                     (rcloneDryOutput !== null) ? (
                         <RcloneActionOutputTabs
                             rcloneActionOuputs={rcloneDryOutput}
-                            isAnyError={isAnyError}
                         />
                     ) : (
                         <LinearProgress />

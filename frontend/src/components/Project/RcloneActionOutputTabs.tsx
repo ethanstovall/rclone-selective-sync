@@ -78,13 +78,11 @@ function a11yProps(index) {
 
 interface RcloneActionOutputTabsProps {
     rcloneActionOuputs: RcloneActionOutput[];
-    isAnyError: boolean;
 
 }
 
 const RcloneActionOutputTabs: React.FunctionComponent<RcloneActionOutputTabsProps> = ({
     rcloneActionOuputs,
-    isAnyError,
 }) => {
     const [tabValue, setTabValue] = useState<number>(0);
     const handleTabChange = (event, newValue) => {
