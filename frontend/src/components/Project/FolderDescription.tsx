@@ -4,6 +4,7 @@ import StandardTypography from "../common/StandardTypography";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
 import { useMemo } from "react";
 import PaddedBox from "../common/PaddedBox";
+import ListItemPaper from "../common/ListItemPaper";
 
 interface FolderDescriptionProps {
     folderDetails: FolderConfig | null;
@@ -24,7 +25,7 @@ const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderDetails, cl
 
     return (
         (folderDetails) ? (
-            <PaddedBox component={Paper} height={"100%"}>
+            <PaddedBox component={ListItemPaper} height={"100%"}>
                 <StandardTypography>
                     Local Path
                 </StandardTypography>

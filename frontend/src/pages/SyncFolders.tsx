@@ -1,8 +1,9 @@
+import { ComponentType } from "react";
 import ProjectDashboard from "../components/Project/ProjectDashboard";
 import ProjectSelector from "../components/Project/ProjectSelector";
 import { GlobalConfigContextProvider } from "../hooks/GlobalConfigContext";
 
-function Project() {
+const SyncFolders: ComponentType<{}> = () => {
     return (
         <GlobalConfigContextProvider>
             <ProjectSelector ProjectSelectorChild={ProjectDashboard}>
@@ -11,4 +12,4 @@ function Project() {
     );
 }
 
-export default Project
+export default SyncFolders
