@@ -1,10 +1,8 @@
-import { useMemo, useState } from "react";
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Box, Checkbox, Collapse, Divider, List, ListItem, ListItemButton, ListItemIcon, Skeleton, Typography } from "@mui/material";
-import { Info, ExpandLess, FolderOpen } from "@mui/icons-material";
+import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon, Skeleton } from "@mui/material";
+import { Info, FolderOpen, ChevronRight } from "@mui/icons-material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import StandardTypography from "../common/StandardTypography.tsx";
-import { useGlobalConfig } from "../../hooks/GlobalConfigContext.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
 import { OpenFolder } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/filesystemservice.ts";
 
@@ -12,27 +10,10 @@ const FolderTree: React.FunctionComponent<{
     projectConfig: ProjectConfig | undefined;
     filteredFolders: string[] | undefined;
     targetFolders: string[];
+    folderNameInfo: string | null;
+    setFolderDetails: (folderNameInfo: string | null) => void;
     setTargetFolders: (targetFolders: string[]) => void;
-}> = ({ projectConfig, filteredFolders, targetFolders, setTargetFolders }) => {
-    // Global config state
-    const { globalConfig, selectedProject } = useGlobalConfig();
-
-    // State for project interaction
-    const [inspectedFolders, setInspectedFolders] = useState<Record<string, boolean>>({});
-
-    const { localRoot, remoteRoot } = useMemo(() => {
-        if (globalConfig === undefined || selectedProject === undefined) {
-            return { localRoot: undefined, remoteRoot: undefined };
-        }
-        return { localRoot: globalConfig.remotes[selectedProject].local_path, remoteRoot: globalConfig.remotes[selectedProject].bucket_name };
-    }, [projectConfig])
-
-    const handleInspectFolder = (folderName: string) => {
-        setInspectedFolders((prevState) => ({
-            ...prevState,
-            [folderName]: !prevState[folderName],
-        }));
-    };
+}> = ({ projectConfig, filteredFolders, targetFolders, folderNameInfo, setFolderDetails, setTargetFolders }) => {
 
     const handleSelectFolder = (value: string) => () => {
         const currentIndex = targetFolders.indexOf(value);
@@ -87,12 +68,12 @@ const FolderTree: React.FunctionComponent<{
                                     <ActionIconButton
                                         tooltip="Info"
                                         color="secondary"
-                                        onClick={() => { handleInspectFolder(folderName) }}
-                                        inputIcon={inspectedFolders[folderName] ? ExpandLess : Info}
+                                        onClick={(folderName != folderNameInfo) ? (() => { console.warn(folderName); setFolderDetails(folderName) }) : (() => { setFolderDetails(null) })}
+                                        inputIcon={(folderName === folderNameInfo) ? ChevronRight : Info}
                                     />
                                 </Box>
                             </ListItem>
-                            <Collapse in={inspectedFolders[folderName]} timeout="auto" unmountOnExit>
+                            {/* <Collapse in={inspectedFolders[folderName]} timeout="auto" unmountOnExit>
                                 <Box sx={{ pl: 2 }}>
                                     <Typography variant="body2" color="secondary">
                                         Remote Path: {`${remoteRoot}/${folderConfig.remote_path}`}
@@ -101,7 +82,7 @@ const FolderTree: React.FunctionComponent<{
                                         Local Path: {`${localRoot}/${folderConfig.local_path}`}
                                     </Typography>
                                 </Box>
-                            </Collapse>
+                            </Collapse> */}
                             <Divider />
                         </Box>
                     )

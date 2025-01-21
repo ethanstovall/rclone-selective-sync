@@ -8,6 +8,7 @@ import RcloneActionDialog from "./RcloneActionDialog.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
 import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
+import FolderDescription from "./FolderDescription.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
@@ -20,6 +21,9 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const [isRunningRcloneAction, setIsRunningRcloneAction] = useState<boolean>(false);
     const [isRcloneDialogOpen, setIsRcloneDialogOpen] = useState<boolean>(false);
     const [activeRcloneAction, setActiveRcloneAction] = useState<RcloneAction>("" as RcloneAction);
+
+    // State for the folder description
+    const [folderNameInfo, setFolderNameInfo] = useState<string | null>(null);
 
     useEffect(() => {
         setFilteredFolders(Object.keys(projectConfig.folders));
@@ -71,60 +75,78 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     }
 
     return (
-        <Grid2 container spacing={0}>
+        <Grid2 container spacing={1} size={12} height={"100%"}>
             {
                 (projectConfig.folders) ? (
-
-                    < React.Fragment >
-                        {/* Control Bar */}
-                        <Grid2 size={12} component={Paper} display={"flex"} justifyContent={"space-between"} alignItems={"center"} padding={"10px"}>
-                            <Autocomplete
-                                freeSolo
-                                options={Object.keys(projectConfig.folders).sort()}
-                                value={searchTerm}
-                                onInputChange={handleSearchChange}
-                                renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
-                                sx={{ width: "100%" }}
-                            />
-                            <ActionIconButton
-                                tooltip="Remove Local"
-                                color="primary"
-                                disabled={areActionButtonsDisabled}
-                                loading={false}
-                                inputIcon={CleaningServices}
-                                onClick={() => { }}
-                            />
-                            <ActionIconButton
-                                tooltip="Push to Remote"
-                                color="primary"
-                                disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PUSH}
-                                inputIcon={CloudUpload}
-                                onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}
-                            />
-                            <ActionIconButton
-                                tooltip="Pull from Remote"
-                                color="primary"
-                                disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PULL}
-                                inputIcon={CloudDownload}
-                                onClick={() => { handleRcloneAction(RcloneAction.PULL, true) }}
-                            />
+                    <React.Fragment>
+                        <Grid2 container spacing={0} size={folderNameInfo ? 6 : 12} height={"100%"} display={"table"}>
+                            {/* Control Bar */}
+                            <Grid2
+                                size={12}
+                                component={Paper}
+                                display={"flex"}
+                                justifyContent={"space-between"}
+                                alignItems={"center"}
+                                padding={"10px"}
+                            >
+                                <Autocomplete
+                                    freeSolo
+                                    options={Object.keys(projectConfig.folders).sort()}
+                                    value={searchTerm}
+                                    onInputChange={handleSearchChange}
+                                    renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
+                                    sx={{ width: "100%" }}
+                                />
+                                <ActionIconButton
+                                    tooltip="Remove Local"
+                                    color="primary"
+                                    disabled={areActionButtonsDisabled}
+                                    loading={false}
+                                    inputIcon={CleaningServices}
+                                    onClick={() => { }}
+                                />
+                                <ActionIconButton
+                                    tooltip="Push to Remote"
+                                    color="primary"
+                                    disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
+                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PUSH}
+                                    inputIcon={CloudUpload}
+                                    onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}
+                                />
+                                <ActionIconButton
+                                    tooltip="Pull from Remote"
+                                    color="primary"
+                                    disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
+                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PULL}
+                                    inputIcon={CloudDownload}
+                                    onClick={() => { handleRcloneAction(RcloneAction.PULL, true) }}
+                                />
+                            </Grid2>
+                            <Grid2 size={12}>
+                                <FolderTree
+                                    projectConfig={projectConfig}
+                                    filteredFolders={filteredFolders}
+                                    targetFolders={targetFolders}
+                                    folderNameInfo={folderNameInfo}
+                                    setFolderDetails={setFolderNameInfo}
+                                    setTargetFolders={setTargetFolders} />
+                                <RcloneActionDialog
+                                    action={activeRcloneAction}
+                                    rcloneDryOutput={rcloneActionDialogOutput}
+                                    isRunningRcloneAction={isRunningRcloneAction}
+                                    isOpen={isRcloneDialogOpen}
+                                    handleClose={handleDialogClose}
+                                    runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
+                                />
+                            </Grid2>
+                            <Grid2 size={12} />
                         </Grid2>
-                        <Grid2 size={12}>
-                            <FolderTree
-                                projectConfig={projectConfig}
-                                filteredFolders={filteredFolders}
-                                targetFolders={targetFolders}
-                                setTargetFolders={setTargetFolders} />
-                            <RcloneActionDialog
-                                action={activeRcloneAction}
-                                rcloneDryOutput={rcloneActionDialogOutput}
-                                isRunningRcloneAction={isRunningRcloneAction}
-                                isOpen={isRcloneDialogOpen}
-                                handleClose={handleDialogClose}
-                                runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
-                            />
+                        <Grid2 container spacing={0} size={folderNameInfo ? 6 : 0} height={"100%"}>
+                            <Grid2 size={12} height={"100%"}>
+                                {
+                                    (folderNameInfo) && <FolderDescription folderDetails={projectConfig.folders[folderNameInfo]} closeDescription={() => { setFolderNameInfo(null) }} />
+                                }
+                            </Grid2>
                         </Grid2>
                     </React.Fragment>
 
@@ -136,7 +158,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                     </Grid2>
                 )
             }
-        </Grid2 >
+        </Grid2>
     )
 }
 

@@ -1,10 +1,10 @@
-import { Box } from "@mui/material"
+import { Box, BoxProps } from "@mui/material"
 import { styled } from "@mui/material/styles"
 
 /**
  * A default padded box.
  */
-const PaddedBox = styled(Box)(({ theme }) => ({
+const PaddedBox = styled(Box)<BoxProps>(({ theme }) => ({
     padding: '10px',
 }));
 
