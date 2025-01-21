@@ -74,7 +74,7 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
                                 >
                                     {
                                         projectOptions.map((option) => (
-                                            <MenuItem value={option}>{option}</MenuItem>
+                                            <MenuItem key={option} value={option}>{option}</MenuItem>
                                         ))
                                     }
                                 </HeaderSelectMenu>
