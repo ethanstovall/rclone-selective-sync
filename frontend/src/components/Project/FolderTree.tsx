@@ -1,6 +1,6 @@
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon, Skeleton } from "@mui/material";
-import { Info, FolderOpen, ChevronRight } from "@mui/icons-material";
+import { Info, ChevronRight, FolderOpenTwoTone } from "@mui/icons-material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import StandardTypography from "../common/StandardTypography.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
@@ -63,7 +63,7 @@ const FolderTree: React.FunctionComponent<{
                                         tooltip="Open Folder"
                                         color="secondary"
                                         onClick={() => { handleOpenFolder(folderName) }}
-                                        inputIcon={FolderOpen}
+                                        inputIcon={FolderOpenTwoTone}
                                     />
                                     <ActionIconButton
                                         tooltip="Info"
