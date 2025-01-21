@@ -70,7 +70,7 @@ const FolderTree: React.FunctionComponent<{
                                         <ActionIconButton
                                             tooltip="Info"
                                             color="secondary"
-                                            onClick={(folderName != folderNameInfo) ? (() => { console.warn(folderName); setFolderDetails(folderName) }) : (() => { setFolderDetails(null) })}
+                                            onClick={(folderName != folderNameInfo) ? (() => { setFolderDetails(folderName) }) : (() => { setFolderDetails(null) })}
                                             inputIcon={(folderName === folderNameInfo) ? ChevronRight : Info}
                                         />
                                     </Box>

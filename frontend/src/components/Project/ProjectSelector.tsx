@@ -33,7 +33,6 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
             try {
                 await ConfigService.SetSelectedProject(selectedProject);
                 const loadedProjectConfig = await ConfigService.LoadSelectedProjectConfig();
-                console.warn(loadedProjectConfig);
                 setProjectConfig(loadedProjectConfig);
             } catch (error) {
                 console.error("Error loading project config:", error);
