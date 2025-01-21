@@ -6,12 +6,14 @@ interface GlobalConfigContextProps {
     globalConfig: GlobalConfig | undefined;
     selectedProject: string | undefined;
     isLoadingGlobalConfig: boolean;
+    setSelectedProject: (selectProject: string) => void;
 }
 
 const GlobalConfigContext = createContext<GlobalConfigContextProps>({
     globalConfig: undefined,
     selectedProject: undefined,
     isLoadingGlobalConfig: true,
+    setSelectedProject: () => { },
 })
 
 // Global config consumer hook.
@@ -46,7 +48,7 @@ const GlobalConfigContextProvider = ({ children }) => {
 
     return (
         // The Provider gives access to the context to its children.
-        <GlobalConfigContext.Provider value={{ globalConfig, selectedProject, isLoadingGlobalConfig }}>
+        <GlobalConfigContext.Provider value={{ globalConfig, selectedProject, isLoadingGlobalConfig, setSelectedProject }}>
             {children}
         </GlobalConfigContext.Provider>
     );

@@ -21,16 +21,25 @@ func NewConfigService(configManager *ConfigManager) *ConfigService {
 	return &ConfigService{configManager: configManager}
 }
 
+// Write the given selected project to the global configuration file.
+func (cs *ConfigService) SetSelectedProject(selectedProject string) error {
+	var err error
+	cs.configManager.SetGlobalConfigSelectedProject(selectedProject)
+	cs.configManager.WriteGlobalConfigToDisk()
+	return err
+}
+
 // Navigate to the specified project directory and find the sync.json config file. If it is not found,
 // create a blank one.
-func (cs *ConfigService) LoadProjectConfig(selectedProject string) (ProjectConfig, error) {
+func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 	var err error
 	// Create a new default config file
 	defaultConfig := &ProjectConfig{}
+	selectedProject := cs.configManager.GetSelectedProject()
 	if selectedProject == "" {
 		return *defaultConfig, errors.New("no project was selected; cannot load config")
 	}
-	projectPath := cs.configManager.globalConfig.Remotes[cs.configManager.globalConfig.SelectedProject].LocalPath
+	projectPath := cs.configManager.globalConfig.Remotes[selectedProject].LocalPath
 	configFile := filepath.Join(projectPath, "sync.json")
 
 	// Load or create the config file
@@ -59,44 +68,28 @@ func (cs *ConfigService) LoadProjectConfig(selectedProject string) (ProjectConfi
 // enough to allow user selection.
 // TODO Don't expose the application keys in the frontend; send only the remote names.
 func (cs *ConfigService) LoadGlobalConfig() (GlobalConfig, string, error) {
-	var err error
-	homeDir, homeErr := os.UserHomeDir()
-	if homeErr != nil {
-		err = fmt.Errorf("failed to get user home directory: %v", homeErr)
+	// Retrieve the default config file path and ensure it exists.
+	configFilePath, err := cs.configManager.getDefaultConfigPath()
+	if err != nil {
+		return GlobalConfig{}, "", fmt.Errorf("failed to get or create default config path: %v", err)
 	}
 
-	configDir := filepath.Join(homeDir, ".config", "rclone-selective-sync")
-	configFile := filepath.Join(configDir, "config.json")
-
-	// Ensure the config directory exists
-	if _, dirErr := os.Stat(configDir); os.IsNotExist(dirErr) {
-		if mkdirErr := os.MkdirAll(configDir, 0644); mkdirErr != nil {
-			err = fmt.Errorf("failed to create config directory: %v", mkdirErr)
-		}
+	// Load the existing configuration file.
+	loadedConfig, loadErr := loadConfig[GlobalConfig](configFilePath)
+	if loadErr != nil {
+		return GlobalConfig{}, "", fmt.Errorf("failed to load global configuration: %v", loadErr)
 	}
 
-	// Load or create the config file
-	if _, fileErr := os.Stat(configFile); os.IsNotExist(fileErr) {
-		// Create a new default config file
-		defaultConfig := &GlobalConfig{}
-		if saveErr := saveConfig(configFile, defaultConfig); saveErr != nil {
-			err = fmt.Errorf("failed to create default config file: %v", saveErr)
-		}
-		cs.configManager.SetGlobalConfig(defaultConfig)
-		fmt.Println("Created new default configuration file at", configFile)
-	} else {
-		// Load the existing config file
-		loadedConfig, loadErr := loadConfig[GlobalConfig](configFile)
-		if loadErr != nil {
-			err = loadErr
-		}
-		// Perform Rclone-specific actions only for GlobalConfig
-		if rcloneConfigErr := handleRcloneConfig(loadedConfig); err != nil {
-			err = rcloneConfigErr
-		}
-		cs.configManager.SetGlobalConfig(loadedConfig)
+	// Perform Rclone-specific actions on the configuration.
+	if rcloneConfigErr := handleRcloneConfig(loadedConfig); rcloneConfigErr != nil {
+		return GlobalConfig{}, "", fmt.Errorf("failed to handle Rclone-specific configuration: %v", rcloneConfigErr)
 	}
-	return *cs.configManager.GetGlobalConfig(), cs.configManager.GetGlobalConfig().SelectedProject, err
+
+	// Update the configuration manager with the loaded configuration.
+	cs.configManager.SetGlobalConfig(loadedConfig)
+
+	// Return the loaded configuration and the selected project.
+	return *loadedConfig, loadedConfig.SelectedProject, nil
 }
 
 // saveConfig writes the Config struct to a file in JSON format

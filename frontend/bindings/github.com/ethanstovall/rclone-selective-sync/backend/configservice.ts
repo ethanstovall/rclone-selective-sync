@@ -36,13 +36,21 @@ export function LoadGlobalConfig(): Promise<[$models.GlobalConfig, string]> & { 
  * Navigate to the specified project directory and find the sync.json config file. If it is not found,
  * create a blank one.
  */
-export function LoadProjectConfig(selectedProject: string): Promise<$models.ProjectConfig> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(2892494869, selectedProject) as any;
+export function LoadSelectedProjectConfig(): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(3182534090) as any;
     let $typingPromise = $resultPromise.then(($result) => {
         return $$createType1($result);
     }) as any;
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
+}
+
+/**
+ * Write the given selected project to the global configuration file.
+ */
+export function SetSelectedProject(selectedProject: string): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(2749222836, selectedProject) as any;
+    return $resultPromise;
 }
 
 // Private type creation functions

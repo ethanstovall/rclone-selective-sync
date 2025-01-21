@@ -1,9 +1,11 @@
-import { ChevronLeft, CloudSync, Settings } from "@mui/icons-material";
+import { CloudSync, Settings } from "@mui/icons-material";
+import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import { useTheme } from "@mui/material";
 import { AppProvider, Navigation, Router } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 // import { PageContainer } from '@toolpad/core/PageContainer';
 import { useMemo, useState } from "react";
+import PaddedBox from "../components/common/PaddedBox";
 
 const NAVIGATION: Navigation = [
     {
@@ -12,8 +14,8 @@ const NAVIGATION: Navigation = [
     },
     {
         segment: 'folders',
-        title: 'Folders',
-        icon: <ChevronLeft />,
+        title: 'Sync Folders',
+        icon: <CloudSync />,
     },
     {
         kind: 'divider',
@@ -30,7 +32,7 @@ const NAVIGATION: Navigation = [
     {
         segment: 'remotes',
         title: 'Remotes',
-        icon: <CloudSync />,
+        icon: <SettingsSystemDaydreamIcon />,
     },
 ];
 
@@ -68,7 +70,9 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
             window={window}
         >
             <DashboardLayout>
-                {children}
+                <PaddedBox>
+                    {children}
+                </PaddedBox>
             </DashboardLayout>
         </AppProvider>
     )

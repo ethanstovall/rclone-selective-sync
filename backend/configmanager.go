@@ -3,6 +3,8 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -27,6 +29,47 @@ func NewConfigManager(global *GlobalConfig, project *ProjectConfig) *ConfigManag
 	}
 }
 
+func (cm *ConfigManager) getDefaultConfigPath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user home directory: %v", err)
+	}
+
+	configDir := filepath.Join(homeDir, ".config", "rclone-selective-sync")
+	configFile := filepath.Join(configDir, "config.json")
+
+	if _, dirErr := os.Stat(configDir); os.IsNotExist(dirErr) {
+		if mkdirErr := os.MkdirAll(configDir, 0644); mkdirErr != nil {
+			return "", fmt.Errorf("failed to create config directory: %v", mkdirErr)
+		}
+	}
+
+	if _, fileErr := os.Stat(configFile); os.IsNotExist(fileErr) {
+		defaultConfig := &GlobalConfig{}
+		if saveErr := saveConfig(configFile, defaultConfig); saveErr != nil {
+			return "", fmt.Errorf("failed to create default config file: %v", saveErr)
+		}
+		fmt.Println("Created new default configuration file at", configFile)
+	}
+
+	return configFile, nil
+}
+
+// WriteGlobalConfigToDisk writes the global configuration to its file on disk.
+func (cm *ConfigManager) WriteGlobalConfigToDisk() error {
+	configFilePath, err := cm.getDefaultConfigPath()
+	if err != nil {
+		return fmt.Errorf("failed to get config file path: %v", err)
+	}
+
+	globalConfig := cm.GetGlobalConfig()
+	if err := saveConfig(configFilePath, globalConfig); err != nil {
+		return fmt.Errorf("failed to save global config to disk: %v", err)
+	}
+
+	return nil
+}
+
 // GetGlobalConfig provides a thread-safe way to access the global config
 func (cm *ConfigManager) GetGlobalConfig() *GlobalConfig {
 	cm.mu.RLock()
@@ -35,7 +78,7 @@ func (cm *ConfigManager) GetGlobalConfig() *GlobalConfig {
 }
 
 // Set the selected project
-func (cm *ConfigManager) SetSelectedProject(selectedProject string) {
+func (cm *ConfigManager) SetGlobalConfigSelectedProject(selectedProject string) {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
 	cm.globalConfig.SelectedProject = selectedProject
