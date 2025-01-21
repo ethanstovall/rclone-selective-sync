@@ -1,10 +1,11 @@
-import { FormControl, Grid2, MenuItem, SelectChangeEvent, Skeleton } from "@mui/material";
+import { FormControl, Grid2, MenuItem, SelectChangeEvent } from "@mui/material";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
 import { useEffect, useMemo, useState } from "react";
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models";
 import { ConfigService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import HeaderTypography from "../common/HeaderTypography";
 import HeaderSelectMenu from "../common/HeaderSelectMenu";
+import FullHeightSkeleton from "../common/FullHeightSkeleton";
 
 export interface ProjectSelectorChildProps {
     projectConfig: ProjectConfig;
@@ -80,7 +81,7 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
                             </FormControl>
 
                         ) : (
-                            <Skeleton />
+                            <FullHeightSkeleton />
                         )
                     }
                 </Grid2>
@@ -92,7 +93,7 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
                             projectConfig={projectConfig}
                         />
                     ) : (
-                        <Skeleton variant="rounded" height={"100%"} />
+                        <FullHeightSkeleton />
                     )
                 }
             </Grid2>

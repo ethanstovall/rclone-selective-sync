@@ -1,10 +1,11 @@
-import { Paper, Skeleton, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { FolderConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import StandardTypography from "../common/StandardTypography";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
 import { useMemo } from "react";
 import PaddedBox from "../common/PaddedBox";
 import ListItemPaper from "../common/ListItemPaper";
+import FullHeightSkeleton from "../common/FullHeightSkeleton";
 
 interface FolderDescriptionProps {
     folderDetails: FolderConfig | null;
@@ -43,7 +44,7 @@ const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderDetails, cl
                 </StandardTypography>
             </PaddedBox>
         ) : (
-            <Skeleton variant="rounded" height="100%" />
+            <FullHeightSkeleton />
         )
     )
 }
