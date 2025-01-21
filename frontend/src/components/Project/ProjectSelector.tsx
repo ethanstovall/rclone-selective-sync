@@ -55,9 +55,9 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
     };
 
     return (
-        <Grid2 container spacing={1}>
+        <Grid2 container spacing={1} height={650}>
             {
-                <Grid2 size={8}>
+                <Grid2 size={8} height={"10%"}>
                     {
                         (!isLoadingGlobalConfig) ? (
                             <FormControl sx={{ m: 1, minWidth: "60%" }}>
@@ -79,14 +79,13 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
                                     }
                                 </HeaderSelectMenu>
                             </FormControl>
-
                         ) : (
                             <FullHeightSkeleton />
                         )
                     }
                 </Grid2>
             }
-            <Grid2 size={12} height={"65vh"}>
+            <Grid2 size={12} height={"90%"}>
                 {
                     (projectConfig && !isLoadingProject) ? (
                         <ProjectSelectorChild
