@@ -98,8 +98,9 @@ export enum RcloneAction {
      */
     $zero = "",
 
-    PUSH = "PUSH",
-    PULL = "PULL",
+    SYNC_PUSH = "SYNC_PUSH",
+    SYNC_PULL = "SYNC_PULL",
+    COPY_PULL = "COPY_PULL",
 };
 
 export class RcloneActionOutput {

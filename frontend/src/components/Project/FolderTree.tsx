@@ -26,12 +26,12 @@ const FolderTree: React.FunctionComponent<{
 
         if (isShowLocal) {
             // Show all local folders when `isShowLocal` is true
-            return [...localFolders];
+            return [...localFolders].sort();
         } else {
             // Show only folders in `projectConfig.folders` that are not in `localFolders`
             return Object.keys(projectConfig.folders).filter(
                 folder => !localFolders.includes(folder)
-            );
+            ).sort();
         }
     }, [localFolders, projectConfig?.folders, isShowLocal]);
 

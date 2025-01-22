@@ -16,12 +16,12 @@ func NewRcloneCommand(fullRemotePath string, fullLocalPath string, action Rclone
 	args := []string{}
 
 	switch action {
-	case PUSH:
+	case SYNC_PUSH:
 		args = append(args, "sync", fullLocalPath, fullRemotePath)
-	case PULL:
+	case SYNC_PULL:
 		args = append(args, "sync", fullRemotePath, fullLocalPath)
-	// case COPY_TO:
-	// case COPY_FROM:
+	case COPY_PULL:
+		args = append(args, "copy", fullRemotePath, fullLocalPath)
 	default:
 		return nil, fmt.Errorf("unsupported action: %s", action)
 	}

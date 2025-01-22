@@ -52,20 +52,23 @@ func (ss *SyncService) ExecuteRcloneAction(targetFolders []string, action Rclone
 			fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, folderConfig.RemotePath)
 
 			// Check if the local directory exists
-			if _, err := os.Stat(fullLocalPath); os.IsNotExist(err) {
-				resultChan <- RcloneActionOutput{
-					TargetFolder:  targetFolder,
-					CommandOutput: "",
-					CommandError:  fmt.Errorf("local path does not exist: %s", fullLocalPath).Error(),
+			_, err := os.Stat(fullLocalPath)
+			if !IsFolderOptional(action) {
+				if os.IsNotExist(err) {
+					resultChan <- RcloneActionOutput{
+						TargetFolder:  targetFolder,
+						CommandOutput: "",
+						CommandError:  fmt.Errorf("local path does not exist: %s", fullLocalPath).Error(),
+					}
+					return
+				} else if err != nil {
+					resultChan <- RcloneActionOutput{
+						TargetFolder:  targetFolder,
+						CommandOutput: "",
+						CommandError:  fmt.Errorf("error accessing local path %s: %v", fullLocalPath, err).Error(),
+					}
+					return
 				}
-				return
-			} else if err != nil {
-				resultChan <- RcloneActionOutput{
-					TargetFolder:  targetFolder,
-					CommandOutput: "",
-					CommandError:  fmt.Errorf("error accessing local path %s: %v", fullLocalPath, err).Error(),
-				}
-				return
 			}
 
 			// Create the Rclone command for this folder

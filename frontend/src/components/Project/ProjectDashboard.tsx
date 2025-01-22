@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { Autocomplete, FormControlLabel, Grid2, Paper, Switch, TextField, Typography } from "@mui/material";
-import { CleaningServices, CloudUpload, CloudDownload } from "@mui/icons-material";
+import { CleaningServices, CloudUpload, CloudDownload, Download } from "@mui/icons-material";
 import FolderTree from "./FolderTree.tsx";
 import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
 import RcloneActionDialog from "./RcloneActionDialog.tsx";
@@ -52,7 +52,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     }, [projectConfig?.folders, searchTerm]);
 
 
-    const handleDialogClose = (event, reason) => {
+    const handleDialogClose = async (event, reason) => {
         if (reason === 'backdropClick' && isRunningRcloneAction) {
             // Don't allow the dialog window to close while an Rclone action is running in the background.
             setIsRcloneDialogOpen(true);
@@ -79,20 +79,25 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             setRcloneActionDialogOutput(null);
             setTargetFolders([]);
         }
+        if (!isShowLocal && activeRcloneAction === RcloneAction.COPY_PULL) {
+            // Reload the local folders afer this action so that the folder tree is appropriately updated
+            loadLocalFolders();
+        }
+    }
+
+    const loadLocalFolders = async () => {
+        try {
+            setIsLoadingLocalFolders(true);
+            const loadedLocalFolders = await FileSystemService.GetLocalFolders();
+            setLocalFolders(loadedLocalFolders);
+        } catch (error: any) {
+            console.error(`Error loading local folders:`, error);
+        } finally {
+            setIsLoadingLocalFolders(false);
+        }
     }
 
     useEffect(() => {
-        const loadLocalFolders = async () => {
-            try {
-                setIsLoadingLocalFolders(true);
-                const loadedLocalFolders = await FileSystemService.GetLocalFolders();
-                setLocalFolders(loadedLocalFolders);
-            } catch (error: any) {
-                console.error(`Error loading local folders:`, error);
-            } finally {
-                setIsLoadingLocalFolders(false);
-            }
-        }
         loadLocalFolders();
     }, []);
 
@@ -137,18 +142,18 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                         tooltip="Push to Remote"
                                         color="primary"
                                         disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                        loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PUSH}
+                                        loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PUSH}
                                         inputIcon={CloudUpload}
-                                        onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}
+                                        onClick={() => { handleRcloneAction(RcloneAction.SYNC_PUSH, true) }}
                                     />
                                 }
                                 <ActionIconButton
-                                    tooltip="Pull from Remote"
+                                    tooltip={(isShowLocal) ? "Update from Remote" : "Download"}
                                     color="primary"
                                     disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PULL}
-                                    inputIcon={CloudDownload}
-                                    onClick={() => { handleRcloneAction(RcloneAction.PULL, true) }}
+                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PULL}
+                                    inputIcon={(isShowLocal) ? CloudDownload : Download}
+                                    onClick={() => { handleRcloneAction((isShowLocal) ? RcloneAction.SYNC_PULL : RcloneAction.COPY_PULL, true) }}
                                 />
                             </Grid2>
                             <Grid2 size={12}>
