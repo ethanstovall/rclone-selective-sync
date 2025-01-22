@@ -23,7 +23,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const [activeRcloneAction, setActiveRcloneAction] = useState<RcloneAction>("" as RcloneAction);
 
     // State for the folder description
-    const [folderNameInfo, setFolderNameInfo] = useState<string | null>(null);
+    const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
 
     useEffect(() => {
         setFilteredFolders(Object.keys(projectConfig.folders));
@@ -79,7 +79,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             {
                 (projectConfig.folders) ? (
                     <React.Fragment>
-                        <Grid2 container spacing={0} size={folderNameInfo ? 6 : 12} height={"100%"} display={"table"}>
+                        <Grid2 container spacing={0} size={6} height={"100%"} display={"table"}>
                             {/* Control Bar */}
                             <Grid2
                                 size={12}
@@ -127,8 +127,8 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     projectConfig={projectConfig}
                                     filteredFolders={filteredFolders}
                                     targetFolders={targetFolders}
-                                    folderNameInfo={folderNameInfo}
-                                    setFolderDetails={setFolderNameInfo}
+                                    focusedFolder={focusedFolder}
+                                    setFocusedFolder={setFocusedFolder}
                                     setTargetFolders={setTargetFolders} />
                                 <RcloneActionDialog
                                     action={activeRcloneAction}
@@ -139,12 +139,11 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
                                 />
                             </Grid2>
-                            <Grid2 size={12} />
                         </Grid2>
-                        <Grid2 container spacing={0} size={folderNameInfo ? 6 : 0} height={"100%"}>
+                        <Grid2 container spacing={0} size={6} height={"100%"}>
                             <Grid2 size={12} height={"100%"}>
                                 {
-                                    (folderNameInfo) && <FolderDescription folderDetails={projectConfig.folders[folderNameInfo]} closeDescription={() => { setFolderNameInfo(null) }} />
+                                    (focusedFolder) && <FolderDescription folderDetails={projectConfig.folders[focusedFolder]} closeDescription={() => { setFocusedFolder(null) }} />
                                 }
                             </Grid2>
                         </Grid2>

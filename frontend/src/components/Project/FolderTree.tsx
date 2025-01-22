@@ -11,12 +11,12 @@ const FolderTree: React.FunctionComponent<{
     projectConfig: ProjectConfig | undefined;
     filteredFolders: string[] | undefined;
     targetFolders: string[];
-    folderNameInfo: string | null;
-    setFolderDetails: (folderNameInfo: string | null) => void;
+    focusedFolder: string | null;
+    setFocusedFolder: (folderNameInfo: string | null) => void;
     setTargetFolders: (targetFolders: string[]) => void;
-}> = ({ projectConfig, filteredFolders, targetFolders, folderNameInfo, setFolderDetails, setTargetFolders }) => {
+}> = ({ projectConfig, filteredFolders, targetFolders, focusedFolder, setFocusedFolder, setTargetFolders }) => {
 
-    const handleSelectFolder = (value: string) => () => {
+    const handleTargetFolder = (value: string) => () => {
         const currentIndex = targetFolders.indexOf(value);
         const newSelected = [...targetFolders];
 
@@ -44,9 +44,12 @@ const FolderTree: React.FunctionComponent<{
                     {Object.entries(projectConfig.folders).map(([folderName, folderConfig]) => (
                         (filteredFolders?.includes(folderName)) && (
                             <Box key={folderName} height={"100%"}>
-                                <ListItem component={ListItemPaper} elevation={3}>
+                                <ListItem component={ListItemPaper} elevation={(focusedFolder === folderName) ? 1 : 5}>
                                     {/* Left-aligned content */}
-                                    <ListItemButton role={undefined} onClick={handleSelectFolder(folderName)}>
+                                    <ListItemButton
+                                        role={undefined}
+                                        onClick={handleTargetFolder(folderName)}
+                                    >
                                         <ListItemIcon>
                                             <Checkbox
                                                 edge="start"
@@ -54,6 +57,7 @@ const FolderTree: React.FunctionComponent<{
                                                 tabIndex={-1}
                                                 disableRipple
                                                 inputProps={{ 'aria-labelledby': folderName }}
+                                                onClick={handleTargetFolder(folderName)}
                                             />
                                         </ListItemIcon>
                                         <StandardTypography sx={{ flexGrow: 1 }}>{folderName}</StandardTypography>
@@ -70,21 +74,11 @@ const FolderTree: React.FunctionComponent<{
                                         <ActionIconButton
                                             tooltip="Info"
                                             color="secondary"
-                                            onClick={(folderName != folderNameInfo) ? (() => { setFolderDetails(folderName) }) : (() => { setFolderDetails(null) })}
-                                            inputIcon={(folderName === folderNameInfo) ? ChevronRight : Info}
+                                            onClick={(folderName != focusedFolder) ? (() => { setFocusedFolder(folderName) }) : (() => { setFocusedFolder(null) })}
+                                            inputIcon={(folderName === focusedFolder) ? ChevronRight : Info}
                                         />
                                     </Box>
                                 </ListItem>
-                                {/* <Collapse in={inspectedFolders[folderName]} timeout="auto" unmountOnExit>
-                                <Box sx={{ pl: 2 }}>
-                                    <Typography variant="body2" color="secondary">
-                                        Remote Path: {`${remoteRoot}/${folderConfig.remote_path}`}
-                                    </Typography>
-                                    <Typography variant="body2" color="secondary">
-                                        Local Path: {`${localRoot}/${folderConfig.local_path}`}
-                                    </Typography>
-                                </Box>
-                            </Collapse> */}
                                 <Divider />
                             </Box>
                         )
