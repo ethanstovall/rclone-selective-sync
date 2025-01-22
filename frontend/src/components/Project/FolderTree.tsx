@@ -79,7 +79,7 @@ const FolderTree: React.FunctionComponent<{
                                 <Box width={"90%"}>
                                     <ListItemButton
                                         role={undefined}
-                                        onClick={() => { setFocusedFolder((folderName === focusedFolder) ? null : folderName) }}
+                                        onClick={() => { setFocusedFolder(folderName) }}
                                         onDoubleClick={(localFolders.includes(folderName)) ? () => { handleOpenFolder(folderName) } : () => { }}
                                     >
                                         <SubheaderTypography color={localFolders.includes(folderName) ? "secondary" : "textDisabled"}>{folderName}</SubheaderTypography>

@@ -10,6 +10,7 @@ import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
 import FolderDescription from "./FolderDescription.tsx";
 import { FileSystemService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
+import StandardDialog from "../common/StandardDialog.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
@@ -21,6 +22,10 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const [isRunningRcloneAction, setIsRunningRcloneAction] = useState<boolean>(false);
     const [isRcloneDialogOpen, setIsRcloneDialogOpen] = useState<boolean>(false);
     const [activeRcloneAction, setActiveRcloneAction] = useState<RcloneAction>("" as RcloneAction);
+
+    // State for local deletion
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+    const [isDeletingLocal, setIsDeletingLocal] = useState<boolean>(false);
 
     // State for the folder description
     const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
@@ -52,7 +57,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     }, [projectConfig?.folders, searchTerm]);
 
 
-    const handleDialogClose = async (event, reason) => {
+    const handleRcloneDialogClose = async (event, reason) => {
         if (reason === 'backdropClick' && isRunningRcloneAction) {
             // Don't allow the dialog window to close while an Rclone action is running in the background.
             setIsRcloneDialogOpen(true);
@@ -83,6 +88,21 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             // Reload the local folders afer this action so that the folder tree is appropriately updated
             loadLocalFolders();
         }
+    }
+
+    // Delete the targeted folders from the local file system.
+    const handleRemoveLocal = async () => {
+        try {
+            setIsDeletingLocal(true);
+            await FileSystemService.DeleteLocalFolders(targetFolders);
+        } catch (e: any) {
+            console.error(e);
+        } finally {
+            setIsDeletingLocal(false);
+            setIsDeleteDialogOpen(false);
+        }
+        // Last, reload the local folders so that the updates are reflected in the folder tree.
+        loadLocalFolders();
     }
 
     const loadLocalFolders = async () => {
@@ -131,9 +151,9 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                         tooltip="Remove Local"
                                         color="primary"
                                         disabled={areActionButtonsDisabled}
-                                        loading={false}
+                                        loading={isDeletingLocal}
                                         inputIcon={CleaningServices}
-                                        onClick={() => { }}
+                                        onClick={() => setIsDeleteDialogOpen(true)}
                                     />
                                 }
                                 {
@@ -155,6 +175,16 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     inputIcon={(isShowLocal) ? CloudDownload : Download}
                                     onClick={() => { handleRcloneAction((isShowLocal) ? RcloneAction.SYNC_PULL : RcloneAction.COPY_PULL, true) }}
                                 />
+                                <StandardDialog
+                                    title="Delete Selected Folders?"
+                                    isDisabled={false}
+                                    isLoading={isDeletingLocal}
+                                    isOpen={isDeleteDialogOpen}
+                                    handleClose={(event, reason) => setIsDeleteDialogOpen(false)}
+                                    handleConfirm={handleRemoveLocal}
+                                >
+                                    <Typography>All selected folders will be deleted from your local file system.</Typography>
+                                </StandardDialog>
                             </Grid2>
                             <Grid2 size={12}>
                                 <FolderTree
@@ -172,7 +202,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     rcloneDryOutput={rcloneActionDialogOutput}
                                     isRunningRcloneAction={isRunningRcloneAction}
                                     isOpen={isRcloneDialogOpen}
-                                    handleClose={handleDialogClose}
+                                    handleClose={handleRcloneDialogClose}
                                     runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
                                 />
                             </Grid2>
