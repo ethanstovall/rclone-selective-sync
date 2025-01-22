@@ -8,6 +8,7 @@ import {Create as $Create} from "@wailsio/runtime";
 export class FolderConfig {
     "remote_path": string;
     "local_path": string;
+    "description": string;
 
     /** Creates a new FolderConfig instance. */
     constructor($$source: Partial<FolderConfig> = {}) {
@@ -16,6 +17,9 @@ export class FolderConfig {
         }
         if (!("local_path" in $$source)) {
             this["local_path"] = "";
+        }
+        if (!("description" in $$source)) {
+            this["description"] = "";
         }
 
         Object.assign(this, $$source);

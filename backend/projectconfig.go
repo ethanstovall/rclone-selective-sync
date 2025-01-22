@@ -6,8 +6,9 @@ type ProjectConfig struct {
 }
 
 type FolderConfig struct {
-	RemotePath string `json:"remote_path"`
-	LocalPath  string `json:"local_path"`
+	RemotePath  string `json:"remote_path"`
+	LocalPath   string `json:"local_path"`
+	Description string `json:"description"`
 }
 
 func (pc *ProjectConfig) ToJSON() (string, error) {

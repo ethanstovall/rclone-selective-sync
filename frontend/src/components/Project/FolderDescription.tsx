@@ -42,6 +42,9 @@ const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderDetails, cl
                 <StandardTypography>
                     Description
                 </StandardTypography>
+                <Typography>
+                    {`${folderDetails.description}`}
+                </Typography>
             </PaddedBox>
         ) : (
             <FullHeightSkeleton />
