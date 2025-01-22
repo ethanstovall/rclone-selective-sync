@@ -1,10 +1,10 @@
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
+import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon, Tooltip } from "@mui/material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import SubheaderTypography from "../common/StandardTypography.tsx";
 import { OpenFolder } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/filesystemservice.ts";
 import FullHeightSkeleton from "../common/FullHeightSkeleton.tsx";
-import { ChevronRight, Info } from "@mui/icons-material";
+import { ChevronRight, Download, FileDownloadDone, Info } from "@mui/icons-material";
 import { useMemo } from "react";
 
 const FolderTree: React.FunctionComponent<{
@@ -68,8 +68,8 @@ const FolderTree: React.FunctionComponent<{
                 <List>
                     {displayFolders?.map((folderName) => (
                         <Box key={folderName} height={"100%"}>
-                            <ListItem component={ListItemPaper} elevation={(focusedFolder === folderName) ? 1 : 5}>
-                                <Box width={"10%"}>
+                            <ListItem component={ListItemPaper} elevation={(focusedFolder === folderName) ? 1 : (localFolders.includes(folderName)) ? 6 : 2}>
+                                <Box>
                                     <ListItemButton
                                         onClick={handleTargetFolder(folderName)}
                                         disabled={(!localFolders.includes(folderName))}
@@ -83,10 +83,22 @@ const FolderTree: React.FunctionComponent<{
                                         />
                                     </ListItemButton>
                                 </Box>
+                                <Box>
+                                    <Tooltip title={localFolders.includes(folderName) ? "" : "Download"}>
+                                        <span>
+                                            <ListItemButton
+                                                disabled={localFolders.includes(folderName)}
+                                            >
+                                                {localFolders.includes(folderName) ? <FileDownloadDone color="disabled" /> : <Download color="primary" />}
+                                            </ListItemButton>
+                                        </span>
+                                    </Tooltip>
+
+                                </Box>
                                 <Box width={"90%"}>
                                     <ListItemButton
                                         role={undefined}
-                                        onClick={() => { setFocusedFolder(folderName) }}
+                                        onClick={() => { setFocusedFolder((folderName === focusedFolder) ? null : folderName) }}
                                         onDoubleClick={(localFolders.includes(folderName)) ? () => { handleOpenFolder(folderName) } : () => { }}
                                     >
                                         <SubheaderTypography color={localFolders.includes(folderName) ? "secondary" : "textDisabled"}>{folderName}</SubheaderTypography>
