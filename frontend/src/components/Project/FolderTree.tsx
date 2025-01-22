@@ -1,11 +1,13 @@
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon, Tooltip } from "@mui/material";
+import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon, Tooltip, Typography } from "@mui/material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import SubheaderTypography from "../common/StandardTypography.tsx";
 import { OpenFolder } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/filesystemservice.ts";
 import FullHeightSkeleton from "../common/FullHeightSkeleton.tsx";
 import { ChevronRight, Download, FileDownloadDone, Info } from "@mui/icons-material";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import ActionDialog from "../common/ActionDialog.tsx";
+import { SyncService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 
 const FolderTree: React.FunctionComponent<{
     projectConfig: ProjectConfig | undefined;
@@ -17,6 +19,10 @@ const FolderTree: React.FunctionComponent<{
     setFocusedFolder: (folderNameInfo: string | null) => void;
     setTargetFolders: (targetFolders: string[]) => void;
 }> = ({ projectConfig, localFolders, isLoadingLocalFolders, filteredFolders, targetFolders, focusedFolder, setFocusedFolder, setTargetFolders }) => {
+
+    const [downloadFolder, setDownloadFolder] = useState<string | null>(null);
+    const [isDownloadingFolder, setIsDownloadingFolder] = useState<boolean>(false);
+    const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState<boolean>(false);
 
     const displayFolders: string[] = useMemo(() => {
         if (!projectConfig?.folders) {
@@ -62,6 +68,35 @@ const FolderTree: React.FunctionComponent<{
         }
     }
 
+    const handleInitiateFolderDownload = (folderName: string) => {
+        setDownloadFolder(folderName);
+        setIsDownloadDialogOpen(true);
+    }
+
+    const handleConfirmDownload = async () => {
+        try {
+            if (downloadFolder === null) {
+                throw Error("downloadFolder passed was null. This should not be possible.");
+            }
+            setIsDownloadingFolder(true);
+            await SyncService.DownloadLocalFolder(downloadFolder);
+        } catch (e: any) {
+            console.error(e);
+        } finally {
+            setIsDownloadDialogOpen(false);
+            setIsDownloadingFolder(false);
+        }
+    }
+
+    const handleDialogClose = (event, reason) => {
+        if (reason === 'backdropClick' && isDownloadingFolder) {
+            // Don't allow the dialog window to close while the download is running in the background.
+            setIsDownloadDialogOpen(true);
+            return;
+        }
+        setIsDownloadDialogOpen(false);
+    }
+
     return (
         ((projectConfig !== undefined) && !isLoadingLocalFolders) ? (
             <Box height={"100%"} overflow={'auto'}>
@@ -88,6 +123,7 @@ const FolderTree: React.FunctionComponent<{
                                         <span>
                                             <ListItemButton
                                                 disabled={localFolders.includes(folderName)}
+                                                onClick={() => { handleInitiateFolderDownload(folderName) }}
                                             >
                                                 {localFolders.includes(folderName) ? <FileDownloadDone color="disabled" /> : <Download color="primary" />}
                                             </ListItemButton>
@@ -116,6 +152,16 @@ const FolderTree: React.FunctionComponent<{
 
                     ))}
                 </List>
+                <ActionDialog
+                    title={`Download Folder ${downloadFolder}?`}
+                    isOpen={isDownloadDialogOpen}
+                    isLoading={isDownloadingFolder}
+                    isDisabled={false}
+                    handleConfirm={handleConfirmDownload}
+                    handleClose={handleDialogClose}
+                >
+                    <Typography>The selected folder will be downloaded to your local file system.</Typography>
+                </ActionDialog>
             </Box>
         ) : (
             <FullHeightSkeleton />

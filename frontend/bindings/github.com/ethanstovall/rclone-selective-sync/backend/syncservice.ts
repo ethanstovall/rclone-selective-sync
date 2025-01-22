@@ -9,6 +9,15 @@ import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
+export function DownloadLocalFolder(targetFolder: string): Promise<$models.RcloneActionOutput> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(534607106, targetFolder) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
+        return $$createType0($result);
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
+}
+
 /**
  * Error handling is done per request, and gracefully returned to the user for evaluation in the frontend.
  */

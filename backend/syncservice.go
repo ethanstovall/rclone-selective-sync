@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -99,30 +101,46 @@ func (ss *SyncService) ExecuteRcloneAction(targetFolders []string, action Rclone
 	return outputs
 }
 
-// func (s *SyncService) Test() error {
-// 	selectedProject := ConfigInstance.SelectedProject
-// 	rcloneConfig := ConfigInstance.Projects[selectedProject]
-// 	cmd := exec.Command(
-// 		"rclone",
-// 		"sync",
-// 		rcloneConfig.LocalPath,
-// 		fmt.Sprintf("%s:%s", rcloneConfig.RemoteName, rcloneConfig.BucketName),
-// 		"--dry-run",
-// 	)
-// 	output, err := cmd.CombinedOutput()
-// 	if err != nil {
-// 		return fmt.Errorf("failed to run 'rclone config file': %v", err)
-// 	}
-// 	fmt.Println("Dry run output:" + string(output))
-// 	// remoteName := config.RemoteName
-// 	// localPath := config.LocalPath
-// 	b, err := json.MarshalIndent(rcloneConfig, "", "  ")
-// 	if err != nil {
-// 		return fmt.Errorf("error:", err)
-// 	}
+func (ss *SyncService) createLocalFolder(targetFolder string) error {
+	// Ensure a project is selected
+	selectedProject := ss.configManager.GetSelectedProject()
+	if selectedProject == "" {
+		return errors.New("no project selected; cannot verify folder paths")
+	}
 
-// func (s *SyncService) Test(selectedProject string, targetFolder string, action RcloneAction) error {
-// 	cmd := RcloneCommand(selectedProject, targetFolder, action)
-// 	cmd
-// 	return nil
-// }
+	// Ensure the project configuration is loaded
+	projectConfig := ss.configManager.GetProjectConfig()
+	if projectConfig == nil {
+		return errors.New("project configuration is not loaded")
+	}
+
+	// Get the folder configuration
+	folderConfig, exists := projectConfig.Folders[targetFolder]
+	if !exists {
+		return fmt.Errorf("target folder '%s' not found in project configuration", targetFolder)
+	}
+
+	// Build the full path
+	basePath := ss.configManager.globalConfig.Remotes[selectedProject].LocalPath
+	fullPath := filepath.Join(basePath, folderConfig.LocalPath)
+
+	// Check if the directory already exists
+	if _, dirErr := os.Stat(fullPath); !os.IsNotExist(dirErr) {
+		return fmt.Errorf("local path '%s' already exists", fullPath)
+	}
+
+	// Attempt to create the directory
+	if mkdirErr := os.MkdirAll(fullPath, 0755); mkdirErr != nil {
+		return fmt.Errorf("folder creation failed: %v", mkdirErr)
+	}
+
+	return nil
+}
+
+func (ss *SyncService) DownloadLocalFolder(targetFolder string) (RcloneActionOutput, error) {
+	if folderCreationErr := ss.createLocalFolder(targetFolder); folderCreationErr != nil {
+		return RcloneActionOutput{}, folderCreationErr
+	}
+	rcloneOutput := ss.ExecuteRcloneAction([]string{targetFolder}, PULL, true)
+	return rcloneOutput[0], nil
+}
