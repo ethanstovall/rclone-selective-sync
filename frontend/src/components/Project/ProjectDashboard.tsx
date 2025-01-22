@@ -14,7 +14,6 @@ import { FileSystemService } from "../../../bindings/github.com/ethanstovall/rcl
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
     const [searchTerm, setSearchTerm] = useState("");
-    const [filteredFolders, setFilteredFolders] = useState<string[] | undefined>(undefined);
 
     // State for Rclone command execution
     const [targetFolders, setTargetFolders] = useState<string[]>([]);
@@ -30,40 +29,25 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const [localFolders, setLocalFolders] = useState<string[]>([]);
     const [isLoadingLocalFolders, setIsLoadingLocalFolders] = useState<boolean>(true);
 
-    useEffect(() => {
-        const loadLocalFolders = async () => {
-            try {
-                setIsLoadingLocalFolders(true);
-                const loadedLocalFolders = await FileSystemService.GetLocalFolders();
-                setLocalFolders(loadedLocalFolders);
-            } catch (error: any) {
-                console.error(`Error loading local folders:`, error);
-            } finally {
-                setIsLoadingLocalFolders(false);
-            }
-        }
-        loadLocalFolders();
-    }, []);
-
-    useEffect(() => {
-        setFilteredFolders(Object.keys(projectConfig.folders));
-    }, [projectConfig]);
-
     const areActionButtonsDisabled = useMemo(() => {
         return targetFolders.length === 0;
     }, [targetFolders])
 
     const handleSearchChange = (event, value) => {
-        if (!projectConfig) {
-            return; // Exit early if projectConfig is undefined
-        }
-        // Filter folders based on the search term
-        const newFilteredFolders = Object.entries(projectConfig.folders).map(([folderName, _]) => (folderName)).filter((name) =>
-            name.toLowerCase().includes(value.toLowerCase())
-        );
-        setFilteredFolders(newFilteredFolders);
         setSearchTerm(value);
     };
+
+    // Memoize the filtered folders based on the search term.
+    const filteredFolders = useMemo(() => {
+        if (!projectConfig?.folders) {
+            return [];
+        }
+
+        return Object.keys(projectConfig.folders).filter((name) =>
+            name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [projectConfig?.folders, searchTerm]);
+
 
     const handleDialogClose = (event, reason) => {
         if (reason === 'backdropClick' && isRunningRcloneAction) {
@@ -93,6 +77,21 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             setTargetFolders([]);
         }
     }
+
+    useEffect(() => {
+        const loadLocalFolders = async () => {
+            try {
+                setIsLoadingLocalFolders(true);
+                const loadedLocalFolders = await FileSystemService.GetLocalFolders();
+                setLocalFolders(loadedLocalFolders);
+            } catch (error: any) {
+                console.error(`Error loading local folders:`, error);
+            } finally {
+                setIsLoadingLocalFolders(false);
+            }
+        }
+        loadLocalFolders();
+    }, []);
 
     return (
         <Grid2 container spacing={1} size={12} height={"100%"}>

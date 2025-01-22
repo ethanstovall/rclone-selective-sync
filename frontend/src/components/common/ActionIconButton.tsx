@@ -11,7 +11,7 @@ type ActionIconButtonProps = {
     onClick: () => void;
 };
 
-const ActionIconButton: React.FC<ActionIconButtonProps> = ({
+const ActionIconButton: React.FC<ActionIconButtonProps> = React.memo(({
     tooltip = undefined,
     color = "default",
     disabled = false,
@@ -33,6 +33,6 @@ const ActionIconButton: React.FC<ActionIconButtonProps> = ({
             </span>
         </Tooltip>
     );
-};
+});
 
 export default ActionIconButton;

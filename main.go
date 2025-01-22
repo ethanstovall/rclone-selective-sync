@@ -62,7 +62,9 @@ func main() {
 	// 'BackgroundColour' is the background colour of the window.
 	// 'URL' is the URL that will be loaded into the webview.
 	app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-		Title: "Rclone Selective Sync",
+		Title:  "Rclone Selective Sync",
+		Width:  1440, // Default width
+		Height: 810,  // Default height
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,
