@@ -1,6 +1,6 @@
 import { Typography } from "@mui/material";
 import { FolderConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
-import StandardTypography from "../common/StandardTypography";
+import SubheaderTypography from "../common/StandardTypography";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
 import { useMemo } from "react";
 import PaddedBox from "../common/PaddedBox";
@@ -27,21 +27,21 @@ const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderDetails, cl
     return (
         (folderDetails) ? (
             <PaddedBox component={ListItemPaper} height={"100%"}>
-                <StandardTypography>
+                <SubheaderTypography color="secondary">
                     Local Path
-                </StandardTypography>
+                </SubheaderTypography>
                 <Typography>
                     {`${localRoot}/${folderDetails.local_path}`}
                 </Typography>
-                <StandardTypography>
+                <SubheaderTypography color="secondary">
                     Remote Path
-                </StandardTypography>
+                </SubheaderTypography>
                 <Typography>
                     {`${remoteRoot}/${folderDetails.remote_path}`}
                 </Typography>
-                <StandardTypography>
+                <SubheaderTypography color="secondary">
                     Description
-                </StandardTypography>
+                </SubheaderTypography>
                 <Typography>
                     {`${folderDetails.description}`}
                 </Typography>

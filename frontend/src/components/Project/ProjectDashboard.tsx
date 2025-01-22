@@ -9,6 +9,7 @@ import ActionIconButton from "../common/ActionIconButton.tsx";
 import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
 import FolderDescription from "./FolderDescription.tsx";
+import { FileSystemService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
@@ -25,9 +26,28 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // State for the folder description
     const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
 
+    // State for all folders which are in the user's file system
+    const [localFolders, setLocalFolders] = useState<string[]>([]);
+    const [isLoadingLocalFolders, setIsLoadingLocalFolders] = useState<boolean>(true);
+
+    useEffect(() => {
+        const loadLocalFolders = async () => {
+            try {
+                setIsLoadingLocalFolders(true);
+                const loadedLocalFolders = await FileSystemService.GetLocalFolders();
+                setLocalFolders(loadedLocalFolders);
+            } catch (error: any) {
+                console.error(`Error loading local folders:`, error);
+            } finally {
+                setIsLoadingLocalFolders(false);
+            }
+        }
+        loadLocalFolders();
+    }, []);
+
     useEffect(() => {
         setFilteredFolders(Object.keys(projectConfig.folders));
-    }, [projectConfig])
+    }, [projectConfig]);
 
     const areActionButtonsDisabled = useMemo(() => {
         return targetFolders.length === 0;
@@ -125,6 +145,8 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             <Grid2 size={12}>
                                 <FolderTree
                                     projectConfig={projectConfig}
+                                    localFolders={localFolders}
+                                    isLoadingLocalFolders={isLoadingLocalFolders}
                                     filteredFolders={filteredFolders}
                                     targetFolders={targetFolders}
                                     focusedFolder={focusedFolder}

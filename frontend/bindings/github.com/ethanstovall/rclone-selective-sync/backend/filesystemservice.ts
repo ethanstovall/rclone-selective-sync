@@ -6,9 +6,25 @@
 import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
 /**
+ * GetLocalFolders checks if the local paths for all folders in the ProjectConfig exist.
+ * Returns a list of folder keys where the paths exist, or an error if something goes wrong.
+ */
+export function GetLocalFolders(): Promise<string[]> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(4261148105) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
+        return $$createType0($result);
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
+}
+
+/**
  * Open the requested folder in the user's file explorer
  */
 export function OpenFolder(targetFolder: string): Promise<void> & { cancel(): void } {
     let $resultPromise = $Call.ByID(2474413535, targetFolder) as any;
     return $resultPromise;
 }
+
+// Private type creation functions
+const $$createType0 = $Create.Array($Create.Any);

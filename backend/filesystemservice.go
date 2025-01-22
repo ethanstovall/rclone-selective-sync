@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -49,4 +50,34 @@ func (fss *FileSystemService) OpenFolder(targetFolder string) error {
 	default:
 		return fmt.Errorf("unsupported platform")
 	}
+}
+
+// GetLocalFolders checks if the local paths for all folders in the ProjectConfig exist.
+// Returns a list of folder keys where the paths exist, or an error if something goes wrong.
+func (fss *FileSystemService) GetLocalFolders() ([]string, error) {
+	selectedProject := fss.configManager.GetSelectedProject()
+	if selectedProject == "" {
+		return nil, errors.New("no project selected; cannot verify folder paths")
+	}
+
+	projectConfig := fss.configManager.GetProjectConfig()
+	if projectConfig == nil {
+		return nil, errors.New("project configuration is not loaded")
+	}
+
+	basePath := fss.configManager.globalConfig.Remotes[selectedProject].LocalPath
+	existingFolders := []string{}
+
+	for folderKey, folderConfig := range projectConfig.Folders {
+		fullPath := filepath.Join(basePath, folderConfig.LocalPath)
+		if _, err := os.Stat(fullPath); err == nil {
+			existingFolders = append(existingFolders, folderKey)
+		} else if os.IsNotExist(err) {
+			fmt.Printf("folder path does not exist locally: %s\n", fullPath)
+		} else {
+			return nil, fmt.Errorf("error checking path %s: %v", fullPath, err)
+		}
+	}
+
+	return existingFolders, nil
 }
