@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Autocomplete, Grid2, Paper, TextField, Typography } from "@mui/material";
+import { Autocomplete, FormControlLabel, Grid2, Paper, Switch, TextField, Typography } from "@mui/material";
 import { CleaningServices, CloudUpload, CloudDownload } from "@mui/icons-material";
 import FolderTree from "./FolderTree.tsx";
 import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
@@ -28,6 +28,9 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // State for all folders which are in the user's file system
     const [localFolders, setLocalFolders] = useState<string[]>([]);
     const [isLoadingLocalFolders, setIsLoadingLocalFolders] = useState<boolean>(true);
+
+    // State for whether to show local or nonlocal folders
+    const [isShowLocal, setIsShowLocal] = useState<boolean>(true);
 
     const areActionButtonsDisabled = useMemo(() => {
         return targetFolders.length === 0;
@@ -108,6 +111,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                 alignItems={"center"}
                                 padding={"10px"}
                             >
+                                <FormControlLabel control={<Switch checked={isShowLocal} onChange={() => { setIsShowLocal((prev) => (!prev)); setTargetFolders([]); }} />} label="Local" />
                                 <Autocomplete
                                     freeSolo
                                     options={Object.keys(projectConfig.folders).sort()}
@@ -116,22 +120,28 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
                                     sx={{ width: "100%" }}
                                 />
-                                <ActionIconButton
-                                    tooltip="Remove Local"
-                                    color="primary"
-                                    disabled={areActionButtonsDisabled}
-                                    loading={false}
-                                    inputIcon={CleaningServices}
-                                    onClick={() => { }}
-                                />
-                                <ActionIconButton
-                                    tooltip="Push to Remote"
-                                    color="primary"
-                                    disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PUSH}
-                                    inputIcon={CloudUpload}
-                                    onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}
-                                />
+                                {
+                                    (isShowLocal) &&
+                                    <ActionIconButton
+                                        tooltip="Remove Local"
+                                        color="primary"
+                                        disabled={areActionButtonsDisabled}
+                                        loading={false}
+                                        inputIcon={CleaningServices}
+                                        onClick={() => { }}
+                                    />
+                                }
+                                {
+                                    (isShowLocal) &&
+                                    <ActionIconButton
+                                        tooltip="Push to Remote"
+                                        color="primary"
+                                        disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
+                                        loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PUSH}
+                                        inputIcon={CloudUpload}
+                                        onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}
+                                    />
+                                }
                                 <ActionIconButton
                                     tooltip="Pull from Remote"
                                     color="primary"
@@ -143,6 +153,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             </Grid2>
                             <Grid2 size={12}>
                                 <FolderTree
+                                    isShowLocal={isShowLocal}
                                     projectConfig={projectConfig}
                                     localFolders={localFolders}
                                     isLoadingLocalFolders={isLoadingLocalFolders}
