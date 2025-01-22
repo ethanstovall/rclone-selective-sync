@@ -1,11 +1,10 @@
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
-import { Info, ChevronRight, FolderOpenTwoTone } from "@mui/icons-material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import StandardTypography from "../common/StandardTypography.tsx";
-import ActionIconButton from "../common/ActionIconButton.tsx";
 import { OpenFolder } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/filesystemservice.ts";
 import FullHeightSkeleton from "../common/FullHeightSkeleton.tsx";
+import { ChevronRight, Info } from "@mui/icons-material";
 
 const FolderTree: React.FunctionComponent<{
     projectConfig: ProjectConfig | undefined;
@@ -45,38 +44,33 @@ const FolderTree: React.FunctionComponent<{
                         (filteredFolders?.includes(folderName)) && (
                             <Box key={folderName} height={"100%"}>
                                 <ListItem component={ListItemPaper} elevation={(focusedFolder === folderName) ? 1 : 5}>
-                                    {/* Left-aligned content */}
-                                    <ListItemButton
-                                        role={undefined}
-                                        onClick={handleTargetFolder(folderName)}
-                                    >
-                                        <ListItemIcon>
+                                    <Box width={"10%"}>
+                                        <ListItemButton
+                                            onClick={handleTargetFolder(folderName)}
+                                        >
                                             <Checkbox
                                                 edge="start"
                                                 checked={targetFolders.includes(folderName)}
                                                 tabIndex={-1}
                                                 disableRipple
                                                 inputProps={{ 'aria-labelledby': folderName }}
-                                                onClick={handleTargetFolder(folderName)}
                                             />
-                                        </ListItemIcon>
-                                        <StandardTypography sx={{ flexGrow: 1 }}>{folderName}</StandardTypography>
-                                    </ListItemButton>
-
-                                    {/* Right-aligned inspect button */}
-                                    <Box sx={{ display: "flex", gap: 1, alignItems: "center", ml: "auto" }}>
-                                        <ActionIconButton
-                                            tooltip="Open Folder"
-                                            color="secondary"
-                                            onClick={() => { handleOpenFolder(folderName) }}
-                                            inputIcon={FolderOpenTwoTone}
-                                        />
-                                        <ActionIconButton
-                                            tooltip="Info"
-                                            color="secondary"
-                                            onClick={(folderName != focusedFolder) ? (() => { setFocusedFolder(folderName) }) : (() => { setFocusedFolder(null) })}
-                                            inputIcon={(folderName === focusedFolder) ? ChevronRight : Info}
-                                        />
+                                        </ListItemButton>
+                                    </Box>
+                                    <Box width={"90%"}>
+                                        <ListItemButton
+                                            role={undefined}
+                                            onClick={() => { setFocusedFolder(folderName) }}
+                                            onDoubleClick={() => { handleOpenFolder(folderName) }}
+                                        >
+                                            <StandardTypography sx={{ flexGrow: 1 }}>{folderName}</StandardTypography>
+                                            <Box sx={{ display: "flex", gap: 1, alignItems: "center", ml: "auto" }}>
+                                                <ListItemIcon>
+                                                    <Info color={(focusedFolder === folderName) ? "secondary" : "disabled"}></Info>
+                                                    {(focusedFolder === folderName) && (<ChevronRight color="secondary" />)}
+                                                </ListItemIcon>
+                                            </Box>
+                                        </ListItemButton>
                                     </Box>
                                 </ListItem>
                                 <Divider />
