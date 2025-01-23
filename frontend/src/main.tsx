@@ -4,10 +4,9 @@ import App from './App'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import RootLayout from './pages/RootLayout';
 import SyncFolders from './pages/SyncFolders';
-import { MANAGE_FOLDERS, MANAGE_REMOTES, PREFERENCES, SYNC_FOLDERS } from './routes';
+import { MANAGE_REMOTES, PREFERENCES, SYNC_FOLDERS } from './routes';
 import Preferences from './pages/Preferences';
 import ManageRemotes from './pages/ManageRemotes';
-import ManageFolders from './pages/ManageFolders';
 
 // Created following the MUI Toolpad tutorial at https://mui.com/toolpad/core/integrations/react-router/
 const router = createBrowserRouter([
@@ -25,10 +24,6 @@ const router = createBrowserRouter([
           {
             path: SYNC_FOLDERS,
             Component: SyncFolders,
-          },
-          {
-            path: MANAGE_FOLDERS,
-            Component: ManageFolders,
           },
           {
             path: PREFERENCES,

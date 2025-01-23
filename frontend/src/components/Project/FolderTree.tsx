@@ -48,7 +48,7 @@ const FolderTree: React.FunctionComponent<{
 
     return (
         ((projectConfig !== undefined) && !isLoadingLocalFolders) ? (
-            <Box height={"100%"} overflow={'auto'}>
+            <Box height={"80%"} overflow={"auto"}>
                 <List>
                     {displayFolders?.map((folderName) => (
                         <Box key={folderName} height={"100%"}>

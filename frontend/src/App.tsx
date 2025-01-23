@@ -4,12 +4,12 @@ import { createTheme, CssBaseline } from '@mui/material';
 import { deepPurple, indigo } from '@mui/material/colors';
 import { useState } from 'react';
 // import RootLayout from './pages/RootLayout.js';
-import { CloudSync, FolderCopy, Settings } from "@mui/icons-material";
+import { CloudSync, Settings } from "@mui/icons-material";
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import { Outlet } from 'react-router';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 import { Navigation } from '@toolpad/core';
-import { MANAGE_FOLDERS, MANAGE_REMOTES, PREFERENCES, SYNC_FOLDERS } from './routes';
+import { MANAGE_REMOTES, PREFERENCES, SYNC_FOLDERS } from './routes';
 
 const NAVIGATION: Navigation = [
   {
@@ -20,11 +20,6 @@ const NAVIGATION: Navigation = [
     segment: SYNC_FOLDERS,
     title: 'Sync Folders',
     icon: <CloudSync />,
-  },
-  {
-    segment: MANAGE_FOLDERS,
-    title: 'Manage Folders',
-    icon: <FolderCopy />,
   },
   {
     kind: 'divider',

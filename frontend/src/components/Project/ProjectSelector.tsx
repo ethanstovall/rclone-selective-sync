@@ -1,11 +1,11 @@
 import { FormControl, Grid2, MenuItem, SelectChangeEvent } from "@mui/material";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models";
-import { ConfigService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import HeaderTypography from "../common/HeaderTypography";
 import HeaderSelectMenu from "../common/HeaderSelectMenu";
 import FullHeightSkeleton from "../common/FullHeightSkeleton";
+import { useProjectConfig } from "../../hooks/ProjectConfigContext";
 
 export interface ProjectSelectorChildProps {
     projectConfig: ProjectConfig;
@@ -20,29 +20,7 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
     // State for global config
     const { globalConfig: globalConfig, selectedProject, isLoadingGlobalConfig, setSelectedProject } = useGlobalConfig();
 
-    // State for project configuration
-    const [projectConfig, setProjectConfig] = useState<ProjectConfig | undefined>(undefined);
-    const [isLoadingProject, setIsLoadingProject] = useState<boolean>(true);
-
-    useEffect(() => {
-        const loadProjectConfig = async () => {
-            if (!selectedProject) return;
-
-            setIsLoadingProject(true);
-
-            try {
-                await ConfigService.SetSelectedProject(selectedProject);
-                const loadedProjectConfig = await ConfigService.LoadSelectedProjectConfig();
-                setProjectConfig(loadedProjectConfig);
-            } catch (error) {
-                console.error(`Error loading project ${selectedProject} config:`, error);
-            } finally {
-                setIsLoadingProject(false);
-            }
-        };
-
-        loadProjectConfig();
-    }, [selectedProject]);
+    const { projectConfig, isLoadingProject, setProjectConfig: _setProjectConfig } = useProjectConfig();
 
     // Get the project options.
     const projectOptions = useMemo(() => {

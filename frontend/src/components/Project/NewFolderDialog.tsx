@@ -1,19 +1,23 @@
-import { useMemo, useState } from "react";
-import { FolderConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models";
+import { useEffect, useMemo, useState } from "react";
+import { FolderConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models";
 import StandardDialog from "../common/StandardDialog";
 import { Box, InputAdornment, TextField } from "@mui/material";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
 import ActionIconButton from "../common/ActionIconButton";
 import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import { OpenInNewRounded } from "@mui/icons-material";
+import { useProjectConfig } from "../../hooks/ProjectConfigContext";
 
 interface NewFolderDialogProps {
     isOpen: boolean;
     setIsOpen: (isOpen: boolean) => void;
-    setLocalFolders: (localFolders: string[]) => void;
 }
 
-const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen, setLocalFolders }) => {
+const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) => {
+    useEffect(() => {
+        console.warn("rerender");
+    })
+
     // Global config state
     const { globalConfig, selectedProject } = useGlobalConfig();
     const localRoot = useMemo(() => {
@@ -22,6 +26,9 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen, se
         }
         return globalConfig.remotes[selectedProject].local_path;
     }, [globalConfig, selectedProject]);
+
+    // Project config state
+    const { setProjectConfig } = useProjectConfig();
 
     // Action state
     const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -38,7 +45,6 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen, se
             [field]: value,
         });
         setNewFolderConfig(updatedConfig);
-        console.log(updatedConfig);
     };
 
 
@@ -52,13 +58,26 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen, se
         try {
             setIsSaving(true);
             await FolderService.RegisterNewFolder(newFolderName, newFolderConfig);
-            const updatedLocalFolders = await FolderService.GetLocalFolders();
-            setLocalFolders(updatedLocalFolders);
+            // Update the local project configuration state
+            setProjectConfig((prev: ProjectConfig | undefined) => {
+                if (!prev) {
+                    throw new Error("Project configuration is not available.");
+                }
+
+                // Add the new folder configuration to the existing project config
+                return new ProjectConfig({
+                    ...prev, // Spread all other properties of ProjectConfig
+                    folders: {
+                        ...prev.folders,
+                        [newFolderName]: newFolderConfig, // Add the new folder configuration
+                    },
+                });
+            });
         } catch (e: any) {
-            console.error(e);
+            console.error("Error while saving new folder:", e);
         } finally {
             setIsSaving(false);
-            setIsOpen(false);
+            handleClose();
         }
     };
 
@@ -87,6 +106,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen, se
                     onChange={(event) => setNewFolderName(event.target.value)}
                     fullWidth
                     margin="normal"
+                    autoComplete="off"
                 />
                 <TextField
                     label="Local Path"
@@ -95,6 +115,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen, se
                     onChange={(event) => handleInputChange("local_path", event.target.value)}
                     fullWidth
                     margin="normal"
+                    autoComplete="off"
                     slotProps={{
                         input: {
                             startAdornment:
@@ -117,6 +138,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen, se
                     multiline
                     rows={3}
                     margin="normal"
+                    autoComplete="off"
                 />
             </Box>
         </StandardDialog>

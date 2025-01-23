@@ -9,15 +9,21 @@ import StandardDialog from "../common/StandardDialog";
 
 interface FolderManagementControls {
     focusedFolder: string | null;
+    localFolders: string[];
     projectConfig: ProjectConfig;
 };
 
 const FolderManagementControls: React.FC<FolderManagementControls> = (
     {
         focusedFolder,
+        localFolders,
         projectConfig,
     }
 ) => {
+    useEffect(() => {
+        console.warn("rendered fmc")
+    }, []);
+
     // Action state
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
     const [isSaving, _setIsSaving] = useState<boolean>(false);
@@ -34,17 +40,12 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
             [field]: value,
         });
         setEditedFolderConfig(updatedConfig);
-        console.log(updatedConfig);
     };
 
     const handleCloseEdit = () => {
         setEditedFolderConfig(folderConfig); // Revert changes
         setEditedFolderName(focusedFolder ?? "");
         setIsSaveDialogOpen(false);
-    };
-
-    const handleSave = () => {
-        console.log();
     };
 
     // Open the selected folder in the user's file explorer
@@ -77,9 +78,9 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
                     size="large"
                     tooltip="Open Folder"
                     color="primary"
-                    disabled={(focusedFolder === null)}
+                    disabled={focusedFolder === null || !localFolders.includes(focusedFolder)}
                     endIcon={<OpenInNewRounded />}
-                    onClick={(focusedFolder === null) ? () => { } : () => { handleOpenFolder(focusedFolder) }}
+                    onClick={(focusedFolder === null || !localFolders.includes(focusedFolder)) ? () => { } : () => { handleOpenFolder(focusedFolder) }}
                 />
                 <ActionButton
                     text="Edit"
@@ -99,7 +100,7 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
                     isOpen={isSaveDialogOpen}
                     isLoading={isSaving}
                     handleClose={handleCloseEdit}
-                    handleConfirm={handleSave}
+                    handleConfirm={() => { }}
                 >
                     <Box>
                         <TextField

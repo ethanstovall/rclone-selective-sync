@@ -23,7 +23,7 @@ const useGlobalConfig = () => {
 
     // if `undefined`, throw an error
     if (context === undefined) {
-        throw new Error("useUserContext was used outside of its Provider");
+        throw new Error("useGlobalConfig context was used outside of its Provider");
     }
 
     return context;
