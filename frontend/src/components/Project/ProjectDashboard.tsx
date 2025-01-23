@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Autocomplete, Grid2, Paper, TextField, Typography } from "@mui/material";
-import { CleaningServices, CloudUpload, CloudDownload } from "@mui/icons-material";
+import { Autocomplete, FormControlLabel, Grid2, Paper, Switch, TextField, Typography } from "@mui/material";
+import { CleaningServices, CloudUpload, CloudDownload, Download } from "@mui/icons-material";
 import FolderTree from "./FolderTree.tsx";
 import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
 import RcloneActionDialog from "./RcloneActionDialog.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
 import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
-import FolderDescription from "./FolderDescription.tsx";
 import { FileSystemService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
+import StandardDialog from "../common/StandardDialog.tsx";
+import FolderManagementControls from "./FolderManagmentControls.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
@@ -22,12 +23,19 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const [isRcloneDialogOpen, setIsRcloneDialogOpen] = useState<boolean>(false);
     const [activeRcloneAction, setActiveRcloneAction] = useState<RcloneAction>("" as RcloneAction);
 
+    // State for local deletion
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+    const [isDeletingLocal, setIsDeletingLocal] = useState<boolean>(false);
+
     // State for the folder description
     const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
 
     // State for all folders which are in the user's file system
     const [localFolders, setLocalFolders] = useState<string[]>([]);
     const [isLoadingLocalFolders, setIsLoadingLocalFolders] = useState<boolean>(true);
+
+    // State for whether to show local or nonlocal folders
+    const [isShowLocal, setIsShowLocal] = useState<boolean>(true);
 
     const areActionButtonsDisabled = useMemo(() => {
         return targetFolders.length === 0;
@@ -49,7 +57,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     }, [projectConfig?.folders, searchTerm]);
 
 
-    const handleDialogClose = (event, reason) => {
+    const handleRcloneDialogClose = async (event, reason) => {
         if (reason === 'backdropClick' && isRunningRcloneAction) {
             // Don't allow the dialog window to close while an Rclone action is running in the background.
             setIsRcloneDialogOpen(true);
@@ -76,20 +84,40 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             setRcloneActionDialogOutput(null);
             setTargetFolders([]);
         }
+        if (!isShowLocal && activeRcloneAction === RcloneAction.COPY_PULL) {
+            // Reload the local folders afer this action so that the folder tree is appropriately updated
+            loadLocalFolders();
+        }
+    }
+
+    // Delete the targeted folders from the local file system.
+    const handleRemoveLocal = async () => {
+        try {
+            setIsDeletingLocal(true);
+            await FileSystemService.DeleteLocalFolders(targetFolders);
+        } catch (e: any) {
+            console.error(e);
+        } finally {
+            setIsDeletingLocal(false);
+            setIsDeleteDialogOpen(false);
+        }
+        // Last, reload the local folders so that the updates are reflected in the folder tree.
+        loadLocalFolders();
+    }
+
+    const loadLocalFolders = async () => {
+        try {
+            setIsLoadingLocalFolders(true);
+            const loadedLocalFolders = await FileSystemService.GetLocalFolders();
+            setLocalFolders(loadedLocalFolders);
+        } catch (error: any) {
+            console.error(`Error loading local folders:`, error);
+        } finally {
+            setIsLoadingLocalFolders(false);
+        }
     }
 
     useEffect(() => {
-        const loadLocalFolders = async () => {
-            try {
-                setIsLoadingLocalFolders(true);
-                const loadedLocalFolders = await FileSystemService.GetLocalFolders();
-                setLocalFolders(loadedLocalFolders);
-            } catch (error: any) {
-                console.error(`Error loading local folders:`, error);
-            } finally {
-                setIsLoadingLocalFolders(false);
-            }
-        }
         loadLocalFolders();
     }, []);
 
@@ -107,7 +135,9 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                 justifyContent={"space-between"}
                                 alignItems={"center"}
                                 padding={"10px"}
+                                height={"14%"}
                             >
+                                <FormControlLabel control={<Switch checked={isShowLocal} onChange={() => { setIsShowLocal((prev) => (!prev)); setTargetFolders([]); }} />} label="Local" />
                                 <Autocomplete
                                     freeSolo
                                     options={Object.keys(projectConfig.folders).sort()}
@@ -116,33 +146,50 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
                                     sx={{ width: "100%" }}
                                 />
+                                {
+                                    (isShowLocal) &&
+                                    <ActionIconButton
+                                        tooltip="Remove Local"
+                                        color="primary"
+                                        disabled={areActionButtonsDisabled}
+                                        loading={isDeletingLocal}
+                                        inputIcon={CleaningServices}
+                                        onClick={() => setIsDeleteDialogOpen(true)}
+                                    />
+                                }
+                                {
+                                    (isShowLocal) &&
+                                    <ActionIconButton
+                                        tooltip="Push to Remote"
+                                        color="primary"
+                                        disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
+                                        loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PUSH}
+                                        inputIcon={CloudUpload}
+                                        onClick={() => { handleRcloneAction(RcloneAction.SYNC_PUSH, true) }}
+                                    />
+                                }
                                 <ActionIconButton
-                                    tooltip="Remove Local"
-                                    color="primary"
-                                    disabled={areActionButtonsDisabled}
-                                    loading={false}
-                                    inputIcon={CleaningServices}
-                                    onClick={() => { }}
-                                />
-                                <ActionIconButton
-                                    tooltip="Push to Remote"
+                                    tooltip={(isShowLocal) ? "Update from Remote" : "Download"}
                                     color="primary"
                                     disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PUSH}
-                                    inputIcon={CloudUpload}
-                                    onClick={() => { handleRcloneAction(RcloneAction.PUSH, true) }}
+                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PULL}
+                                    inputIcon={(isShowLocal) ? CloudDownload : Download}
+                                    onClick={() => { handleRcloneAction((isShowLocal) ? RcloneAction.SYNC_PULL : RcloneAction.COPY_PULL, true) }}
                                 />
-                                <ActionIconButton
-                                    tooltip="Pull from Remote"
-                                    color="primary"
-                                    disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                    loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.PULL}
-                                    inputIcon={CloudDownload}
-                                    onClick={() => { handleRcloneAction(RcloneAction.PULL, true) }}
-                                />
+                                <StandardDialog
+                                    title="Delete Selected Folders?"
+                                    isDisabled={false}
+                                    isLoading={isDeletingLocal}
+                                    isOpen={isDeleteDialogOpen}
+                                    handleClose={(event, reason) => setIsDeleteDialogOpen(false)}
+                                    handleConfirm={handleRemoveLocal}
+                                >
+                                    <Typography>All selected folders will be deleted from your local file system.</Typography>
+                                </StandardDialog>
                             </Grid2>
                             <Grid2 size={12}>
                                 <FolderTree
+                                    isShowLocal={isShowLocal}
                                     projectConfig={projectConfig}
                                     localFolders={localFolders}
                                     isLoadingLocalFolders={isLoadingLocalFolders}
@@ -156,17 +203,16 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     rcloneDryOutput={rcloneActionDialogOutput}
                                     isRunningRcloneAction={isRunningRcloneAction}
                                     isOpen={isRcloneDialogOpen}
-                                    handleClose={handleDialogClose}
+                                    handleClose={handleRcloneDialogClose}
                                     runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
                                 />
                             </Grid2>
                         </Grid2>
                         <Grid2 container spacing={0} size={6} height={"100%"}>
-                            <Grid2 size={12} height={"100%"}>
-                                {
-                                    (focusedFolder) && <FolderDescription folderDetails={projectConfig.folders[focusedFolder]} closeDescription={() => { setFocusedFolder(null) }} />
-                                }
-                            </Grid2>
+                            <FolderManagementControls
+                                focusedFolder={focusedFolder}
+                                projectConfig={projectConfig}
+                            />
                         </Grid2>
                     </React.Fragment>
 

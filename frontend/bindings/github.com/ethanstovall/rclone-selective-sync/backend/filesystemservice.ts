@@ -6,6 +6,22 @@
 import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
 /**
+ * Wrapper function for creating folders
+ */
+export function CreateLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(2873619431, targetFolders) as any;
+    return $resultPromise;
+}
+
+/**
+ * Wrapper function for deleting folders
+ */
+export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1497113144, targetFolders) as any;
+    return $resultPromise;
+}
+
+/**
  * GetLocalFolders checks if the local paths for all folders in the ProjectConfig exist.
  * Returns a list of folder keys where the paths exist, or an error if something goes wrong.
  */

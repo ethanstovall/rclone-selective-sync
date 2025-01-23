@@ -66,7 +66,7 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
                                     displayEmpty
                                     inputProps={{ 'aria-label': 'Selected Project' }}
                                     renderValue={(selected) => (
-                                        <HeaderTypography>
+                                        <HeaderTypography color="primary">
                                             {selected as string ?? ''}
                                         </HeaderTypography>
                                     )}

@@ -52,20 +52,23 @@ func (ss *SyncService) ExecuteRcloneAction(targetFolders []string, action Rclone
 			fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, folderConfig.RemotePath)
 
 			// Check if the local directory exists
-			if _, err := os.Stat(fullLocalPath); os.IsNotExist(err) {
-				resultChan <- RcloneActionOutput{
-					TargetFolder:  targetFolder,
-					CommandOutput: "",
-					CommandError:  fmt.Errorf("local path does not exist: %s", fullLocalPath).Error(),
+			_, err := os.Stat(fullLocalPath)
+			if !IsFolderOptional(action) {
+				if os.IsNotExist(err) {
+					resultChan <- RcloneActionOutput{
+						TargetFolder:  targetFolder,
+						CommandOutput: "",
+						CommandError:  fmt.Errorf("local path does not exist: %s", fullLocalPath).Error(),
+					}
+					return
+				} else if err != nil {
+					resultChan <- RcloneActionOutput{
+						TargetFolder:  targetFolder,
+						CommandOutput: "",
+						CommandError:  fmt.Errorf("error accessing local path %s: %v", fullLocalPath, err).Error(),
+					}
+					return
 				}
-				return
-			} else if err != nil {
-				resultChan <- RcloneActionOutput{
-					TargetFolder:  targetFolder,
-					CommandOutput: "",
-					CommandError:  fmt.Errorf("error accessing local path %s: %v", fullLocalPath, err).Error(),
-				}
-				return
 			}
 
 			// Create the Rclone command for this folder
@@ -98,31 +101,3 @@ func (ss *SyncService) ExecuteRcloneAction(targetFolders []string, action Rclone
 
 	return outputs
 }
-
-// func (s *SyncService) Test() error {
-// 	selectedProject := ConfigInstance.SelectedProject
-// 	rcloneConfig := ConfigInstance.Projects[selectedProject]
-// 	cmd := exec.Command(
-// 		"rclone",
-// 		"sync",
-// 		rcloneConfig.LocalPath,
-// 		fmt.Sprintf("%s:%s", rcloneConfig.RemoteName, rcloneConfig.BucketName),
-// 		"--dry-run",
-// 	)
-// 	output, err := cmd.CombinedOutput()
-// 	if err != nil {
-// 		return fmt.Errorf("failed to run 'rclone config file': %v", err)
-// 	}
-// 	fmt.Println("Dry run output:" + string(output))
-// 	// remoteName := config.RemoteName
-// 	// localPath := config.LocalPath
-// 	b, err := json.MarshalIndent(rcloneConfig, "", "  ")
-// 	if err != nil {
-// 		return fmt.Errorf("error:", err)
-// 	}
-
-// func (s *SyncService) Test(selectedProject string, targetFolder string, action RcloneAction) error {
-// 	cmd := RcloneCommand(selectedProject, targetFolder, action)
-// 	cmd
-// 	return nil
-// }
