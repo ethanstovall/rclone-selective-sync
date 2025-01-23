@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { Autocomplete, FormControlLabel, Grid2, Paper, Switch, TextField, Typography } from "@mui/material";
-import { CleaningServices, CloudUpload, CloudDownload, Download } from "@mui/icons-material";
+import { CleaningServices, CloudUpload, CloudDownload, Download, CreateNewFolderRounded } from "@mui/icons-material";
 import FolderTree from "./FolderTree.tsx";
 import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
 import RcloneActionDialog from "./RcloneActionDialog.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
 import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
-import { FileSystemService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
+import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 import StandardDialog from "../common/StandardDialog.tsx";
 import FolderManagementControls from "./FolderManagmentControls.tsx";
+import NewFolderDialog from "./NewFolderDialog.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
@@ -26,6 +27,9 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // State for local deletion
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
     const [isDeletingLocal, setIsDeletingLocal] = useState<boolean>(false);
+
+    // State for new folder registration
+    const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState<boolean>(false)
 
     // State for the folder description
     const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
@@ -94,7 +98,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const handleRemoveLocal = async () => {
         try {
             setIsDeletingLocal(true);
-            await FileSystemService.DeleteLocalFolders(targetFolders);
+            await FolderService.DeleteLocalFolders(targetFolders);
         } catch (e: any) {
             console.error(e);
         } finally {
@@ -108,7 +112,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const loadLocalFolders = async () => {
         try {
             setIsLoadingLocalFolders(true);
-            const loadedLocalFolders = await FileSystemService.GetLocalFolders();
+            const loadedLocalFolders = await FolderService.GetLocalFolders();
             setLocalFolders(loadedLocalFolders);
         } catch (error: any) {
             console.error(`Error loading local folders:`, error);
@@ -149,6 +153,17 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                 {
                                     (isShowLocal) &&
                                     <ActionIconButton
+                                        tooltip="Register New"
+                                        color="primary"
+                                        disabled={false}
+                                        loading={false}
+                                        inputIcon={CreateNewFolderRounded}
+                                        onClick={() => setIsNewFolderDialogOpen(true)}
+                                    />
+                                }
+                                {
+                                    (isShowLocal) &&
+                                    <ActionIconButton
                                         tooltip="Remove Local"
                                         color="primary"
                                         disabled={areActionButtonsDisabled}
@@ -175,6 +190,11 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                     loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PULL}
                                     inputIcon={(isShowLocal) ? CloudDownload : Download}
                                     onClick={() => { handleRcloneAction((isShowLocal) ? RcloneAction.SYNC_PULL : RcloneAction.COPY_PULL, true) }}
+                                />
+                                <NewFolderDialog
+                                    isOpen={isNewFolderDialogOpen}
+                                    setIsOpen={setIsNewFolderDialogOpen}
+                                    setLocalFolders={setLocalFolders}
                                 />
                                 <StandardDialog
                                     title="Delete Selected Folders?"

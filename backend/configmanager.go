@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync"
 )
@@ -129,4 +130,17 @@ func MarshalToJSON(object any) (string, error) {
 		return "", fmt.Errorf("failed to marshal config: %v", err)
 	}
 	return string(jsonConfig), nil
+}
+
+func (cs *ConfigManager) syncConfigToRemote() error {
+	projectRemoteConfig := cs.GetSelectedProjectRemoteConfig()
+	projectPath := projectRemoteConfig.LocalPath
+	configFile := filepath.Join(projectPath, "sync.json")
+	remotePath := fmt.Sprintf("%s:%s/sync.json", projectRemoteConfig.RemoteName, projectRemoteConfig.BucketName)
+	cmd := exec.Command("rclone", "copy", configFile, remotePath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("rclone copy failed: %s, output: %s", err, string(output))
+	}
+	return nil
 }

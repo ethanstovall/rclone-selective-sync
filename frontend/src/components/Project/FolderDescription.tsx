@@ -15,7 +15,6 @@ interface FolderDescriptionProps {
 const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderConfig }) => {
     // Global config state
     const { globalConfig, selectedProject } = useGlobalConfig();
-    console.log(folderConfig);
 
     const { localRoot, remoteRoot } = useMemo(() => {
         if (globalConfig === undefined || selectedProject === undefined) {

@@ -5,11 +5,15 @@
 // @ts-ignore: Unused imports
 import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
 /**
  * Wrapper function for creating folders
  */
 export function CreateLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(2873619431, targetFolders) as any;
+    let $resultPromise = $Call.ByID(1403706680, targetFolders) as any;
     return $resultPromise;
 }
 
@@ -17,7 +21,7 @@ export function CreateLocalFolders(targetFolders: string[]): Promise<void> & { c
  * Wrapper function for deleting folders
  */
 export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1497113144, targetFolders) as any;
+    let $resultPromise = $Call.ByID(1155014579, targetFolders) as any;
     return $resultPromise;
 }
 
@@ -26,7 +30,7 @@ export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { c
  * Returns a list of folder keys where the paths exist, or an error if something goes wrong.
  */
 export function GetLocalFolders(): Promise<string[]> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(4261148105) as any;
+    let $resultPromise = $Call.ByID(1746980032) as any;
     let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
     }) as any;
@@ -38,7 +42,12 @@ export function GetLocalFolders(): Promise<string[]> & { cancel(): void } {
  * Open the requested folder in the user's file explorer
  */
 export function OpenFolder(targetFolder: string): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(2474413535, targetFolder) as any;
+    let $resultPromise = $Call.ByID(3234094764, targetFolder) as any;
+    return $resultPromise;
+}
+
+export function RegisterNewFolder(newFolderName: string, folderConfig: $models.FolderConfig): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1863241101, newFolderName, folderConfig) as any;
     return $resultPromise;
 }
 

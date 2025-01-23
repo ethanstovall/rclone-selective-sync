@@ -1,7 +1,7 @@
 import { Box, Grid2, TextField } from "@mui/material";
-import { FileSystemService, FolderConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
+import { FolderService, FolderConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import ActionButton from "../common/ActionButton";
-import { CreateNewFolder, EditRounded, OpenInNewRounded } from "@mui/icons-material";
+import { EditRounded, OpenInNewRounded } from "@mui/icons-material";
 import React, { useEffect, useMemo, useState } from "react";
 import ListItemPaper from "../common/ListItemPaper";
 import FolderDescription from "./FolderDescription";
@@ -18,30 +18,28 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
         projectConfig,
     }
 ) => {
+    // Action state
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
     const [isSaving, _setIsSaving] = useState<boolean>(false);
-    const [isNewSave, _setIsNewSave] = useState<boolean>(false);
 
-    const [editFolderConfig, setEditFolderConfig] = useState(new FolderConfig());
+    // Input state
+    const [editedFolderConfig, setEditedFolderConfig] = useState<FolderConfig>(new FolderConfig());
+    // The folder name is the key in the ProjectConfig.folders map, so we have to store it separately.
+    const [editedFolderName, setEditedFolderName] = useState<string>(focusedFolder ?? "");
 
     const handleInputChange = (field: keyof FolderConfig, value: string) => {
         // Create a new instance with the updated field
         const updatedConfig = new FolderConfig({
-            ...editFolderConfig,
+            ...editedFolderConfig,
             [field]: value,
         });
-        setEditFolderConfig(updatedConfig);
+        setEditedFolderConfig(updatedConfig);
         console.log(updatedConfig);
     };
 
-    // const handleSaveClick = () => {
-    //     // Implement save logic (e.g., API call or state update)
-    //     console.log("Saved details:", editFolderConfig);
-    //     setIsSaveDialogOpen(false);
-    // };
-
     const handleCloseEdit = () => {
-        setEditFolderConfig(folderConfig); // Revert changes
+        setEditedFolderConfig(folderConfig); // Revert changes
+        setEditedFolderName(focusedFolder ?? "");
         setIsSaveDialogOpen(false);
     };
 
@@ -52,7 +50,7 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
     // Open the selected folder in the user's file explorer
     const handleOpenFolder = async (targetFolder: string) => {
         try {
-            await FileSystemService.OpenFolder(targetFolder)
+            await FolderService.OpenFolder(targetFolder)
         } catch (e: any) {
             console.error(e);
         }
@@ -68,7 +66,7 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
 
     // Synchronize editDetails with details when details change
     useEffect(() => {
-        setEditFolderConfig(folderConfig);
+        setEditedFolderConfig(folderConfig);
     }, [folderConfig]);
 
     return (
@@ -89,23 +87,15 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
                     color="secondary"
                     variant="outlined"
                     tooltip="Edit Folder Configuration"
+                    disabled={(focusedFolder === null)}
                     endIcon={<EditRounded />}
                     onClick={() => { setIsSaveDialogOpen(true); }}
-                />
-                <ActionButton
-                    text="New"
-                    size="large"
-                    color="secondary"
-                    variant="outlined"
-                    tooltip="Register New Folder"
-                    endIcon={<CreateNewFolder />}
-                    onClick={() => { }}
                 />
             </Grid2>
             <Grid2 size={12} height={"90%"}>
                 <FolderDescription folderConfig={folderConfig} />
                 <StandardDialog
-                    title="test"
+                    title={`Edit Configuration for "${focusedFolder}"`}
                     isOpen={isSaveDialogOpen}
                     isLoading={isSaving}
                     handleClose={handleCloseEdit}
@@ -113,17 +103,16 @@ const FolderManagementControls: React.FC<FolderManagementControls> = (
                 >
                     <Box>
                         <TextField
-                            label="Local Path"
-                            value={editFolderConfig.local_path}
-                            disabled={!isNewSave}
-                            onChange={(e) => handleInputChange("local_path", e.target.value)}
+                            label="Folder Name"
+                            value={editedFolderName}
+                            onChange={(event) => setEditedFolderName(event.target.value)}
                             fullWidth
                             margin="normal"
                         />
                         <TextField
                             label="Description"
-                            value={editFolderConfig.description}
-                            onChange={(e) => handleInputChange("description", e.target.value)}
+                            value={editedFolderConfig.description}
+                            onChange={(event) => handleInputChange("description", event.target.value)}
                             fullWidth
                             multiline
                             rows={3}
