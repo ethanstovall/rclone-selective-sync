@@ -20,7 +20,7 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
     // State for global config
     const { globalConfig: globalConfig, selectedProject, isLoadingGlobalConfig, setSelectedProject } = useGlobalConfig();
 
-    const { projectConfig, isLoadingProject, setProjectConfig: _setProjectConfig } = useProjectConfig();
+    const { projectConfig, isLoadingProject } = useProjectConfig();
 
     // Get the project options.
     const projectOptions = useMemo(() => {

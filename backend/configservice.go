@@ -92,25 +92,6 @@ func (cs *ConfigService) LoadGlobalConfig() (GlobalConfig, string, error) {
 	return *loadedConfig, loadedConfig.SelectedProject, nil
 }
 
-// saveConfig writes the Config struct to a file in JSON format
-func saveConfig(path string, config any) error {
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return err
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if _, err = f.Write(data); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Generic loadConfig function
 func loadConfig[T any](path string) (*T, error) {
 	// Step 1: Open the JSON config file

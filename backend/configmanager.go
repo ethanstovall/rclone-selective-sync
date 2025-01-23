@@ -144,3 +144,22 @@ func (cs *ConfigManager) syncConfigToRemote() error {
 	}
 	return nil
 }
+
+// saveConfig writes the Config struct to a file in JSON format
+func saveConfig(path string, config any) error {
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err = f.Write(data); err != nil {
+		return err
+	}
+
+	return nil
+}

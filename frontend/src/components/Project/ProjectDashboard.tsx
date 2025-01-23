@@ -10,7 +10,7 @@ import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
 import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 import StandardDialog from "../common/StandardDialog.tsx";
-import FolderManagementControls from "./FolderManagmentControls.tsx";
+import FocusedFolderControls from "./FocusedFolderControls.tsx";
 import NewFolderDialog from "./NewFolderDialog.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
@@ -227,7 +227,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                     </Grid2>
                 </Grid2>
                 <Grid2 container spacing={0} size={6} height={"100%"}>
-                    <FolderManagementControls
+                    <FocusedFolderControls
                         focusedFolder={focusedFolder}
                         localFolders={localFolders}
                         projectConfig={projectConfig}

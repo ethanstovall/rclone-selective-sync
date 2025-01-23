@@ -57,7 +57,8 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
     const handleConfirm = async () => {
         try {
             setIsSaving(true);
-            await FolderService.RegisterNewFolder(newFolderName, newFolderConfig);
+            const trimmedNewFolderName = newFolderName.trim()
+            const savedFolderConfig: FolderConfig = await FolderService.RegisterNewFolder(newFolderName, newFolderConfig);
             // Update the local project configuration state
             setProjectConfig((prev: ProjectConfig | undefined) => {
                 if (!prev) {
@@ -69,7 +70,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
                     ...prev, // Spread all other properties of ProjectConfig
                     folders: {
                         ...prev.folders,
-                        [newFolderName]: newFolderConfig, // Add the new folder configuration
+                        [trimmedNewFolderName]: savedFolderConfig, // Add the new folder configuration
                     },
                 });
             });

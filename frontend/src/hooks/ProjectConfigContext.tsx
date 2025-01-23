@@ -30,7 +30,7 @@ const useProjectConfig = () => {
 
 const ProjectConfigContextProvider = ({ children }) => {
     // State for global config
-    const { globalConfig: _globalConfig, selectedProject, isLoadingGlobalConfig: _isLoadingGlobalConfig, setSelectedProject: _setSelectedProject } = useGlobalConfig();
+    const { selectedProject } = useGlobalConfig();
 
     // State for project configuration
     const [projectConfig, setProjectConfig] = useState<ProjectConfig | undefined>(undefined);

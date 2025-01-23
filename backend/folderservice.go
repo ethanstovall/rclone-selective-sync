@@ -147,58 +147,106 @@ func (fs *FolderService) DeleteLocalFolders(targetFolders []string) error {
 	return fs.processLocalFolders(targetFolders, "DELETE")
 }
 
-func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig FolderConfig) error {
+func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig FolderConfig) (FolderConfig, error) {
+	// Default is an empty FolderConfig
+	emptyConfig := FolderConfig{}
+	// Get the remote config for the selected project
+	projectRemoteConfig := fs.configManager.GetSelectedProjectRemoteConfig()
+	if projectRemoteConfig == nil {
+		return emptyConfig, fmt.Errorf("selected project's remote configuration is not available")
+	}
+
+	// Get the project config
+	projectConfig := fs.configManager.GetProjectConfig()
+	if projectConfig == nil {
+		return emptyConfig, fmt.Errorf("project configuration is not available")
+	}
+
+	// Normalize the local path
+	folderConfig.LocalPath = normalizePath(folderConfig.LocalPath)
+
+	// Set remotePath to be identical to LocalPath
+	folderConfig.RemotePath = folderConfig.LocalPath
+
+	// Verify no other folder with the same key exists
+	if _, exists := projectConfig.Folders[newFolderName]; exists {
+		return emptyConfig, fmt.Errorf("a folder with the name '%s' is already configured for the selected project", newFolderName)
+	}
+
+	// Verify no other folder has the same LocalPath
+	fullLocalPath := filepath.Join(projectRemoteConfig.LocalPath, folderConfig.LocalPath)
+	for _, existingFolder := range projectConfig.Folders {
+		existingFullPath := filepath.Join(projectRemoteConfig.LocalPath, normalizePath(existingFolder.LocalPath))
+		if fullLocalPath == existingFullPath {
+			return emptyConfig, fmt.Errorf("a folder with the local path '%s' is already configured for the selected project", folderConfig.LocalPath)
+		}
+	}
+
+	if _, err := os.Stat(fullLocalPath); os.IsNotExist(err) {
+		return emptyConfig, fmt.Errorf("folder path does not exist: %s", fullLocalPath)
+	}
+
+	// Add the new key-value pair to the projectConfig
+	projectConfig.Folders[newFolderName] = folderConfig
+
+	// Set the new project configuration
+	fs.configManager.SetProjectConfig(projectConfig)
+
+	// Save the new project configuration to the sync.json file
+	projectPath := projectRemoteConfig.LocalPath
+	configFile := filepath.Join(projectPath, "sync.json")
+
+	if err := saveConfig(configFile, projectConfig); err != nil {
+		return emptyConfig, fmt.Errorf("failed to save project configuration: %v", err)
+	}
+
+	// Sync the updated sync.json file to the remote
+	if err := fs.configManager.syncConfigToRemote(); err != nil {
+		return emptyConfig, fmt.Errorf("failed to sync the project configuration to the remote: %v", err)
+	}
+
+	return folderConfig, nil
+}
+
+func (fs *FolderService) EditFolder(currentFolderName string, newFolderName string, newFolderConfig FolderConfig) error {
+
 	// Get the remote config for the selected project
 	projectRemoteConfig := fs.configManager.GetSelectedProjectRemoteConfig()
 	if projectRemoteConfig == nil {
 		return fmt.Errorf("selected project's remote configuration is not available")
 	}
 
-	// Get the project config
+	// Get the project configuration
 	projectConfig := fs.configManager.GetProjectConfig()
 	if projectConfig == nil {
-		return fmt.Errorf("project configuration is not available")
+		return fmt.Errorf("no project config is defined for project '%s'", fs.configManager.GetSelectedProject())
 	}
 
-	// Step 1: Normalize the local path
-	folderConfig.LocalPath = normalizePath(folderConfig.LocalPath)
-
-	// Step 2: Set remotePath to be identical to LocalPath
-	folderConfig.RemotePath = folderConfig.LocalPath
-
-	// Step 3: Verify no other folder with the same key exists
-	if _, exists := projectConfig.Folders[newFolderName]; exists {
-		return fmt.Errorf("a folder with the name '%s' is already configured for the selected project", newFolderName)
+	if _, exists := projectConfig.Folders[currentFolderName]; !exists {
+		return fmt.Errorf("folder '%s' does not exist in the project configuration", currentFolderName)
 	}
 
-	// Step 4: Verify no other folder has the same LocalPath
-	fullLocalPath := filepath.Join(projectRemoteConfig.LocalPath, folderConfig.LocalPath)
-	for _, existingFolder := range projectConfig.Folders {
-		existingFullPath := filepath.Join(projectRemoteConfig.LocalPath, normalizePath(existingFolder.LocalPath))
-		if fullLocalPath == existingFullPath {
-			return fmt.Errorf("a folder with the local path '%s' is already configured for the selected project", folderConfig.LocalPath)
-		}
+	// Update the folder configuration
+	if currentFolderName == newFolderName {
+		// Replace the config for the existing folder
+		projectConfig.Folders[currentFolderName] = newFolderConfig
+		fmt.Println("UPDATING ALREADY EXISTING NAME")
+	} else {
+		// Remove the old key-value pair and add the new one
+		delete(projectConfig.Folders, currentFolderName)
+		fmt.Println("DELETING EXISTING FOR NEW NAME")
+		projectConfig.Folders[newFolderName] = newFolderConfig
 	}
 
-	if _, err := os.Stat(fullLocalPath); os.IsNotExist(err) {
-		return fmt.Errorf("folder path does not exist: %s", fullLocalPath)
-	}
-
-	// Step 5: Add the new key-value pair to the projectConfig
-	projectConfig.Folders[newFolderName] = folderConfig
-
-	// Step 6: Set the new project configuration
-	fs.configManager.SetProjectConfig(projectConfig)
-
-	// Step 7: Save the new project configuration to the sync.json file
+	// Save and copy/sync the updated configuration
 	projectPath := projectRemoteConfig.LocalPath
 	configFile := filepath.Join(projectPath, "sync.json")
-
 	if err := saveConfig(configFile, projectConfig); err != nil {
-		return fmt.Errorf("failed to save project configuration: %v", err)
+		return fmt.Errorf("failed to save updated project configuration: %w", err)
 	}
+	fs.configManager.SetProjectConfig(projectConfig)
 
-	// Step 8: Sync the updated sync.json file to the remote
+	// Sync the updated sync.json file to the remote
 	if err := fs.configManager.syncConfigToRemote(); err != nil {
 		return fmt.Errorf("failed to sync the project configuration to the remote: %v", err)
 	}

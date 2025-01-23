@@ -25,6 +25,11 @@ export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { c
     return $resultPromise;
 }
 
+export function EditFolder(currentFolderName: string, newFolderName: string, newFolderConfig: $models.FolderConfig): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1535184624, currentFolderName, newFolderName, newFolderConfig) as any;
+    return $resultPromise;
+}
+
 /**
  * GetLocalFolders checks if the local paths for all folders in the ProjectConfig exist.
  * Returns a list of folder keys where the paths exist, or an error if something goes wrong.
@@ -46,10 +51,15 @@ export function OpenFolder(targetFolder: string): Promise<void> & { cancel(): vo
     return $resultPromise;
 }
 
-export function RegisterNewFolder(newFolderName: string, folderConfig: $models.FolderConfig): Promise<void> & { cancel(): void } {
+export function RegisterNewFolder(newFolderName: string, folderConfig: $models.FolderConfig): Promise<$models.FolderConfig> & { cancel(): void } {
     let $resultPromise = $Call.ByID(1863241101, newFolderName, folderConfig) as any;
-    return $resultPromise;
+    let $typingPromise = $resultPromise.then(($result) => {
+        return $$createType1($result);
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 // Private type creation functions
 const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = $models.FolderConfig.createFrom;
