@@ -8,7 +8,10 @@ type ActionButtonProps = {
     autofocus?: boolean;
     disabled?: boolean;
     loading?: boolean;
-    text: string;
+    text?: string;
+    textTransform?: string;
+    endIcon?: React.ReactNode | null;
+    size?: "small" | "medium" | "large";
     onClick: () => void;
 };
 
@@ -19,7 +22,10 @@ const ActionButton: React.FunctionComponent<ActionButtonProps> = ({
     autofocus = false,
     disabled = false,
     loading = false,
-    text,
+    text = "",
+    textTransform = "none",
+    endIcon = null,
+    size = "medium",
     onClick,
 }) => {
     return (
@@ -31,6 +37,9 @@ const ActionButton: React.FunctionComponent<ActionButtonProps> = ({
                     onClick={onClick}
                     disabled={disabled || loading}
                     autoFocus={autofocus}
+                    endIcon={endIcon}
+                    size={size}
+                    sx={{ textTransform: textTransform }}
                 >
                     {(loading) ? <CircularProgress /> : text}
                 </Button>

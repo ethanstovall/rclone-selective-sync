@@ -8,9 +8,9 @@ import RcloneActionDialog from "./RcloneActionDialog.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
 import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
-import FolderDescription from "./FolderDescription.tsx";
 import { FileSystemService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 import StandardDialog from "../common/StandardDialog.tsx";
+import FolderManagementControls from "./FolderManagmentControls.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
@@ -135,6 +135,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                 justifyContent={"space-between"}
                                 alignItems={"center"}
                                 padding={"10px"}
+                                height={"14%"}
                             >
                                 <FormControlLabel control={<Switch checked={isShowLocal} onChange={() => { setIsShowLocal((prev) => (!prev)); setTargetFolders([]); }} />} label="Local" />
                                 <Autocomplete
@@ -208,11 +209,10 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             </Grid2>
                         </Grid2>
                         <Grid2 container spacing={0} size={6} height={"100%"}>
-                            <Grid2 size={12} height={"100%"}>
-                                {
-                                    (focusedFolder) && <FolderDescription folderDetails={projectConfig.folders[focusedFolder]} closeDescription={() => { setFocusedFolder(null) }} />
-                                }
-                            </Grid2>
+                            <FolderManagementControls
+                                focusedFolder={focusedFolder}
+                                projectConfig={projectConfig}
+                            />
                         </Grid2>
                     </React.Fragment>
 

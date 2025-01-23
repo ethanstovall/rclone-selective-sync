@@ -7,7 +7,7 @@ import ActionButton from '../common/ActionButton';
 
 interface StandardDialogProps {
     title: string;
-    isDisabled: boolean;
+    isDisabled?: boolean;
     isLoading: boolean;
     isOpen: boolean;
     handleConfirm: () => void;
@@ -17,7 +17,7 @@ interface StandardDialogProps {
 
 const StandardDialog: React.FunctionComponent<StandardDialogProps> = ({
     title,
-    isDisabled,
+    isDisabled = false,
     isLoading,
     isOpen,
     handleConfirm,
@@ -33,6 +33,7 @@ const StandardDialog: React.FunctionComponent<StandardDialogProps> = ({
             fullWidth={true}
             aria-labelledby="standard-dialog-title"
             aria-describedby="standarddialog-description"
+            sx={{ width: "50vw", justifySelf: "center" }}
         >
             <DialogTitle id="standard-dialog-title">{title}</DialogTitle>
             <DialogContent dividers>

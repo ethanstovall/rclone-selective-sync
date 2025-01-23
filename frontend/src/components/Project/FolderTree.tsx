@@ -2,7 +2,6 @@ import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-
 import { Box, Checkbox, Divider, List, ListItem, ListItemButton, ListItemIcon } from "@mui/material";
 import ListItemPaper from "../common/ListItemPaper.tsx";
 import SubheaderTypography from "../common/StandardTypography.tsx";
-import { OpenFolder } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/filesystemservice.ts";
 import FullHeightSkeleton from "../common/FullHeightSkeleton.tsx";
 import { ChevronRight, Info } from "@mui/icons-material";
 import { useMemo } from "react";
@@ -47,15 +46,6 @@ const FolderTree: React.FunctionComponent<{
         setTargetFolders(newSelected);
     };
 
-    // Open the selected folder in the user's file explorer
-    const handleOpenFolder = async (targetFolder: string) => {
-        try {
-            await OpenFolder(targetFolder)
-        } catch (e: any) {
-            console.error(e);
-        }
-    }
-
     return (
         ((projectConfig !== undefined) && !isLoadingLocalFolders) ? (
             <Box height={"100%"} overflow={'auto'}>
@@ -79,8 +69,7 @@ const FolderTree: React.FunctionComponent<{
                                 <Box width={"90%"}>
                                     <ListItemButton
                                         role={undefined}
-                                        onClick={() => { setFocusedFolder(folderName) }}
-                                        onDoubleClick={(localFolders.includes(folderName)) ? () => { handleOpenFolder(folderName) } : () => { }}
+                                        onClick={() => { setFocusedFolder((folderName === focusedFolder) ? null : folderName) }}
                                     >
                                         <SubheaderTypography color={localFolders.includes(folderName) ? "secondary" : "textDisabled"}>{folderName}</SubheaderTypography>
                                         <Box sx={{ display: "flex", gap: 1, alignItems: "center", ml: "auto" }}>

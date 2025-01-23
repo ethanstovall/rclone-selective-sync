@@ -1,17 +1,19 @@
-import { Typography } from "@mui/material"
+import { Typography, TypographyProps } from "@mui/material"
 import { styled } from "@mui/material/styles"
 
 /**
  * Styled header component.
  */
-const HeaderTypography = styled(Typography)(({ theme }) => ({
+const HeaderTypography = styled(Typography, {
+    shouldForwardProp: (prop) => prop !== "color",
+})<TypographyProps & { color?: "primary" | "secondary" | "error" | "info" | "success" | "warning" }>(({ theme, color }) => ({
     fontWeight: "bold",
     fontSize: "1.8rem", // Slightly larger for header emphasis
-    color: theme.palette.primary.main, // Matches the primary color from the theme
-    textTransform: "none", // Makes the header text all caps
+    textTransform: "none", // Keeps the header text case as provided
     letterSpacing: "0.1em", // Adds subtle spacing for elegance
-    // marginBottom: "16px", // Adds spacing below the header.
-    borderBottom: `2px solid ${theme.palette.primary.main}`, // Adds a tasteful underline
+    color: color && theme.palette[color].main,
+    borderBottom: `2px solid ${color && theme.palette[color] ? theme.palette[color].main : theme.palette.primary.main
+        }`, // Match the theme palette color or fallback to primary
     paddingBottom: "4px", // Adds padding for the underline
 }));
 
