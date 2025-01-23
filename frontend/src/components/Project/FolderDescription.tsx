@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import PaddedBox from "../common/PaddedBox";
 import ListItemPaper from "../common/ListItemPaper";
 import React from "react";
-import HeaderTypography from "../common/HeaderTypography";
+import StandardTypography from "../common/StandardTypography";
 
 interface FolderDescriptionProps {
     folderConfig: FolderConfig;
@@ -57,7 +57,7 @@ const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderConfig }) =
             justifyContent="center"
             alignItems="center"
         >
-            <HeaderTypography justifySelf={"center"} alignSelf="center" color="secondary">No Folder Selected</HeaderTypography>
+            <StandardTypography justifySelf={"center"} alignSelf="center" color="textDisabled">No Folder Selected</StandardTypography>
         </PaddedBox>
     )
 };

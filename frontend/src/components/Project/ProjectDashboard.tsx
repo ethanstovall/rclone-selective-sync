@@ -231,6 +231,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                         focusedFolder={focusedFolder}
                         localFolders={localFolders}
                         projectConfig={projectConfig}
+                        setFocusedFolder={setFocusedFolder}
                     />
                 </Grid2>
             </Grid2>

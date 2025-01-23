@@ -45,7 +45,6 @@ const StandardDialog: React.FunctionComponent<StandardDialogProps> = ({
                     justifyContent: 'space-evenly', // Spread buttons if needed
                 }}>
                 <ActionButton
-                    disabled={isDisabled}
                     // Just feed the handleClose a null for the event and reason here since they won't be used.
                     onClick={() => { handleClose(null, null) }}
                     text="Cancel"

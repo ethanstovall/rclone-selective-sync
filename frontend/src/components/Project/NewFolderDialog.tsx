@@ -38,6 +38,9 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
     // The folder name is the key in the ProjectConfig.folders map, so we have to store it separately.
     const [newFolderName, setNewFolderName] = useState<string>("");
 
+    // The user can't save under the following conditions.
+    const canSaveEdit = useMemo(() => (newFolderName !== ""), [newFolderName]);
+
     const handleInputChange = (field: keyof FolderConfig, value: string) => {
         // Create a new instance with the updated field
         const updatedConfig = new FolderConfig({
@@ -58,22 +61,9 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
         try {
             setIsSaving(true);
             const trimmedNewFolderName = newFolderName.trim()
-            const savedFolderConfig: FolderConfig = await FolderService.RegisterNewFolder(newFolderName, newFolderConfig);
+            const updatedProjectConfig: ProjectConfig = await FolderService.RegisterNewFolder(trimmedNewFolderName, newFolderConfig);
             // Update the local project configuration state
-            setProjectConfig((prev: ProjectConfig | undefined) => {
-                if (!prev) {
-                    throw new Error("Project configuration is not available.");
-                }
-
-                // Add the new folder configuration to the existing project config
-                return new ProjectConfig({
-                    ...prev, // Spread all other properties of ProjectConfig
-                    folders: {
-                        ...prev.folders,
-                        [trimmedNewFolderName]: savedFolderConfig, // Add the new folder configuration
-                    },
-                });
-            });
+            setProjectConfig(updatedProjectConfig);
         } catch (e: any) {
             console.error("Error while saving new folder:", e);
         } finally {
@@ -98,6 +88,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
             isLoading={isSaving}
             handleClose={handleClose}
             handleConfirm={handleConfirm}
+            isDisabled={!canSaveEdit}
         >
             <Box>
                 <TextField
@@ -105,6 +96,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
                     id="folder-name"
                     value={newFolderName}
                     onChange={(event) => setNewFolderName(event.target.value)}
+                    helperText={!newFolderName.trim() ? "Please enter a folder name." : ""}
                     fullWidth
                     margin="normal"
                     autoComplete="off"

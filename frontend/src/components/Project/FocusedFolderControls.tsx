@@ -1,4 +1,4 @@
-import { Box, Grid2, TextField } from "@mui/material";
+import { Box, Grid2, TextField, Typography } from "@mui/material";
 import { FolderService, FolderConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import ActionButton from "../common/ActionButton";
 import { Delete, EditRounded, OpenInNewRounded } from "@mui/icons-material";
@@ -12,6 +12,7 @@ interface FocusedFolderControls {
     focusedFolder: string | null;
     localFolders: string[];
     projectConfig: ProjectConfig;
+    setFocusedFolder: (newFocusedFolder: string | null) => void;
 };
 
 const FocusedFolderControls: React.FC<FocusedFolderControls> = (
@@ -19,6 +20,7 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
         focusedFolder,
         localFolders,
         projectConfig,
+        setFocusedFolder
     }
 ) => {
     // Project config state from context
@@ -26,7 +28,8 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
 
     // Action state
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
-    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [folderAction, setFolderAction] = useState<"edit" | "deregister" | null>("edit");
 
     // Input state
     const [editedFolderConfig, setEditedFolderConfig] = useState<FolderConfig>(new FolderConfig());
@@ -60,40 +63,39 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
     // Save the edited folder configuration
     const handleSaveEdits = async () => {
         try {
-            if (focusedFolder == undefined) {
+            if (focusedFolder == null) {
                 // Don't proceed if this is not defined or empty. This should never happen.
                 throw new Error(`Focused folder is not defined or empty. Value is: ${focusedFolder}`)
             }
-            setIsSaving(true);
+            setIsLoading(true);
             // Trim any trailing whitespace from the edited folder name.
             const trimmedEditedFolderName = editedFolderName.trim()
-            await FolderService.EditFolder(focusedFolder, trimmedEditedFolderName, editedFolderConfig)
-            setProjectConfig((prev: ProjectConfig | undefined) => {
-                if (!prev) {
-                    throw new Error("Project configuration is not available.");
-                }
-
-                // Add the new folder configuration to the existing project config
-                return new ProjectConfig({
-                    ...prev, // Spread all other properties of ProjectConfig
-                    folders: {
-                        ...prev.folders,
-                        // There's a slight risk in accepting the folder config edited in the app state to the parent
-                        // project config, but we control the inputs enough so that it's easier to just do
-                        // that than it is to take a return from the backend. Also note that the backend does not
-                        // modify the FolderConfig object passed to it. If it did, we'd need to only reset the state
-                        // with an updated/modified copy from the backend.
-                        [trimmedEditedFolderName]: editedFolderConfig,
-                    },
-                });
-            });
+            const updatedProjectConfig: ProjectConfig = await FolderService.EditFolder(focusedFolder, trimmedEditedFolderName, editedFolderConfig)
+            setFocusedFolder(trimmedEditedFolderName);
+            setProjectConfig(updatedProjectConfig);
         } catch (e: any) {
             console.error(e);
         } finally {
-            setIsSaving(false);
+            setIsLoading(false);
             setIsSaveDialogOpen(false);
         }
+    }
 
+    const handleDeregister = async () => {
+        try {
+            if (focusedFolder == null) {
+                // Don't proceed if this is not defined or empty. This should never happen.
+                throw new Error(`Focused folder is not defined or empty. Value is: ${focusedFolder}`)
+            }
+            setIsLoading(true);
+            setProjectConfig(await FolderService.DeregisterFolder(focusedFolder));
+        } catch (e: any) {
+            console.error(e)
+        } finally {
+            setIsLoading(false);
+            setFocusedFolder(null);
+            setIsSaveDialogOpen(false);
+        }
     }
 
     // Pull the current folder details
@@ -105,7 +107,7 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
     }, [focusedFolder, projectConfig]);
 
     // The user can't save under the following conditions.
-    const canSaveEdit = useMemo(() => (editedFolderName !== ""), [editedFolderName])
+    const canSaveEdit = useMemo(() => (editedFolderName !== ""), [editedFolderName]);
 
     // Synchronize editDetails with details when details change
     useEffect(() => {
@@ -136,7 +138,7 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
                     tooltip="Edit Folder Configuration"
                     disabled={(focusedFolder === null)}
                     endIcon={<EditRounded />}
-                    onClick={() => { setIsSaveDialogOpen(true); }}
+                    onClick={() => { setFolderAction("edit"); setIsSaveDialogOpen(true); }}
                 />
                 <ActionButton
                     text="Deregister"
@@ -146,38 +148,51 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
                     tooltip="Deregister Folder"
                     disabled={(focusedFolder === null)}
                     endIcon={<Delete />}
-                    onClick={() => { setIsSaveDialogOpen(true); }}
+                    onClick={() => { setFolderAction("deregister"); setIsSaveDialogOpen(true); }}
                 />
             </Grid2>
             <Grid2 size={12} height={"90%"}>
                 <FolderDescription folderConfig={folderConfig} />
                 <StandardDialog
-                    title={`Edit Configuration for "${focusedFolder}"`}
+                    title={(folderAction === "edit") ? `Edit Configuration for "${focusedFolder}"` : (folderAction === "deregister") ? `Deregister folder "${focusedFolder}"?` : ""}
                     isOpen={isSaveDialogOpen}
-                    isLoading={isSaving}
+                    isLoading={isLoading}
                     isDisabled={!canSaveEdit}
                     handleClose={handleCloseEdit}
-                    handleConfirm={handleSaveEdits}
+                    handleConfirm={() => {
+                        if (folderAction == "edit") {
+                            handleSaveEdits();
+                        } else if (folderAction === "deregister") {
+                            handleDeregister();
+                        }
+                    }}
                 >
-                    <Box>
-                        <TextField
-                            label="Folder Name"
-                            value={editedFolderName}
-                            onChange={(event) => setEditedFolderName(event.target.value)}
-                            helperText={!editedFolderName.trim() ? "Please enter a folder name." : ""}
-                            fullWidth
-                            margin="normal"
-                        />
-                        <TextField
-                            label="Description"
-                            value={editedFolderConfig.description}
-                            onChange={(event) => handleInputChange("description", event.target.value)}
-                            fullWidth
-                            multiline
-                            rows={3}
-                            margin="normal"
-                        />
-                    </Box>
+                    {
+                        (folderAction === "edit") &&
+                        <Box>
+                            <TextField
+                                label="Folder Name"
+                                value={editedFolderName}
+                                onChange={(event) => setEditedFolderName(event.target.value)}
+                                helperText={!editedFolderName.trim() ? "Please enter a folder name." : ""}
+                                fullWidth
+                                margin="normal"
+                            />
+                            <TextField
+                                label="Description"
+                                value={editedFolderConfig.description}
+                                onChange={(event) => handleInputChange("description", event.target.value)}
+                                fullWidth
+                                multiline
+                                rows={3}
+                                margin="normal"
+                            />
+                        </Box>
+                    }
+                    {
+                        (folderAction === "deregister") &&
+                        <Typography>The selected folder will be removed from the project configuration. However, it will remain in your local file system. If you wish to delete it entirely from the project both locally and remotely, you will need to do so manually with Rclone.</Typography>
+                    }
                 </StandardDialog>
             </Grid2>
         </Grid2 >
