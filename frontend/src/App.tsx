@@ -86,7 +86,7 @@ function App() {
 
   return (
     <ReactRouterAppProvider navigation={NAVIGATION} branding={BRANDING} theme={appTheme}>
-      <CssBaseline />
+      <CssBaseline enableColorScheme />
       <Outlet />
     </ReactRouterAppProvider>
   )
