@@ -151,23 +151,21 @@ func (fs *FolderService) DeleteLocalFolders(targetFolders []string) error {
 // Return the entire ProjectConfig after, which will contain the fully updated map of Folders.
 func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig FolderConfig) (ProjectConfig, error) {
 	// Get the remote config for the selected project
-	projectRemoteConfig := fs.configManager.GetSelectedProjectRemoteConfig()
-	if projectRemoteConfig == nil {
-		return ProjectConfig{}, fmt.Errorf("selected project's remote configuration is not available")
+	projectRemoteConfig, err := fs.getProjectRemoteConfig()
+	if err != nil {
+		return ProjectConfig{}, err
 	}
 
 	// Get the project config
-	projectConfig := fs.configManager.GetProjectConfig()
-	if projectConfig == nil {
-		return ProjectConfig{}, fmt.Errorf("project configuration is not available")
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return ProjectConfig{}, err
 	}
 
 	// Normalize the local path
 	folderConfig.LocalPath = normalizePath(folderConfig.LocalPath)
-
 	// Set remotePath to be identical to LocalPath
 	folderConfig.RemotePath = folderConfig.LocalPath
-
 	// Verify no other folder with the same key exists
 	if _, exists := projectConfig.Folders[newFolderName]; exists {
 		return *projectConfig, fmt.Errorf("a folder with the name '%s' is already configured for the selected project", newFolderName)
@@ -182,6 +180,7 @@ func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig Fo
 		}
 	}
 
+	// Verify the local folder exists
 	if _, err := os.Stat(fullLocalPath); os.IsNotExist(err) {
 		return *projectConfig, fmt.Errorf("folder path does not exist: %s", fullLocalPath)
 	}
@@ -190,19 +189,8 @@ func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig Fo
 	projectConfig.Folders[newFolderName] = folderConfig
 
 	// Set the new project configuration
-	fs.configManager.SetProjectConfig(projectConfig)
-
-	// Save the new project configuration to the sync.json file
-	projectPath := projectRemoteConfig.LocalPath
-	configFile := filepath.Join(projectPath, "sync.json")
-
-	if err := saveConfig(configFile, projectConfig); err != nil {
-		return *projectConfig, fmt.Errorf("failed to save project configuration: %v", err)
-	}
-
-	// Sync the updated sync.json file to the remote
-	if err := fs.configManager.syncConfigToRemote(); err != nil {
-		return *projectConfig, fmt.Errorf("failed to sync the project configuration to the remote: %v", err)
+	if err := fs.saveAndSyncConfig(projectConfig); err != nil {
+		return *projectConfig, err
 	}
 
 	return *projectConfig, nil
@@ -211,88 +199,103 @@ func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig Fo
 // Given an existing folder, a new folder name, and a new FolderConfig, update the existing folder to match the new items.
 // Return the entire ProjectConfig after, which will contain the fully updated map of Folders.
 func (fs *FolderService) EditFolder(currentFolderName string, newFolderName string, newFolderConfig FolderConfig) (ProjectConfig, error) {
-	// Get the remote config for the selected project
-	projectRemoteConfig := fs.configManager.GetSelectedProjectRemoteConfig()
-	if projectRemoteConfig == nil {
-		// Shouldn't ever happen; just return an empty ProjectConfig.
-		return ProjectConfig{}, fmt.Errorf("selected project's remote configuration is not available")
+	// Get the project config.
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return ProjectConfig{}, err
 	}
 
-	// Get the project configuration
-	projectConfig := fs.configManager.GetProjectConfig()
-	if projectConfig == nil {
-		// Shouldn't ever happen; just return an empty ProjectConfig.
-		return ProjectConfig{}, fmt.Errorf("no project config is defined for project '%s'", fs.configManager.GetSelectedProject())
-	}
-
+	// Verify that the given folder to update exists in the configuration.
 	if _, exists := projectConfig.Folders[currentFolderName]; !exists {
 		return *projectConfig, fmt.Errorf("folder '%s' does not exist in the project configuration", currentFolderName)
 	}
 
-	// Update the folder configuration
 	if currentFolderName == newFolderName {
-		// Replace the config for the existing folder
+		// If the user has not changed the name of the folder in configuration, just replace the existing FolderConfig object.
 		projectConfig.Folders[currentFolderName] = newFolderConfig
 	} else {
-		// Remove the old key-value pair and add the new one
+		// Else, remove the existing key-value pair and replace it with the new one.
 		delete(projectConfig.Folders, currentFolderName)
 		projectConfig.Folders[newFolderName] = newFolderConfig
 	}
 
-	// Save and copy/sync the updated configuration
-	projectPath := projectRemoteConfig.LocalPath
-	configFile := filepath.Join(projectPath, "sync.json")
-	if err := saveConfig(configFile, projectConfig); err != nil {
-		return *projectConfig, fmt.Errorf("failed to save updated project configuration: %w", err)
-	}
-	fs.configManager.SetProjectConfig(projectConfig)
-
-	// Sync the updated sync.json file to the remote
-	if err := fs.configManager.syncConfigToRemote(); err != nil {
-		return *projectConfig, fmt.Errorf("failed to sync the project configuration to the remote: %v", err)
+	// Save the config and push it to the remote.
+	if err := fs.saveAndSyncConfig(projectConfig); err != nil {
+		return *projectConfig, err
 	}
 
 	return *projectConfig, nil
 }
 
+// Given a target folder, scrub it out of the project configuration's folders. This does NOT delete the folder
+// locally nor remotely. It only untracks it. Full deletions should be carefully handled manually with Rclone
+// for now.
 func (fs *FolderService) DeregisterFolder(targetFolder string) (ProjectConfig, error) {
-	// Get the remote config for the selected project
-	projectRemoteConfig := fs.configManager.GetSelectedProjectRemoteConfig()
-	if projectRemoteConfig == nil {
-		// Shouldn't ever happen; just return an empty ProjectConfig.
-		return ProjectConfig{}, fmt.Errorf("selected project's remote configuration is not available")
+	// Get the project config.
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return ProjectConfig{}, err
 	}
 
-	// Get the project configuration
-	projectConfig := fs.configManager.GetProjectConfig()
-	if projectConfig == nil {
-		// Shouldn't ever happen; just return an empty ProjectConfig.
-		return ProjectConfig{}, fmt.Errorf("no project config is defined for project '%s'", fs.configManager.GetSelectedProject())
-	}
-
+	// Verify the targeted folder exists in the project config.
 	if _, exists := projectConfig.Folders[targetFolder]; !exists {
 		return *projectConfig, fmt.Errorf("folder '%s' does not exist in the project configuration", targetFolder)
 	}
 
-	// Remove the key-value pair to deregister
+	// Remove the targeted folder's key-value pair from the project configuration's folder map.
 	delete(projectConfig.Folders, targetFolder)
 
-	// Save and copy/sync the updated configuration
-	projectPath := projectRemoteConfig.LocalPath
-	configFile := filepath.Join(projectPath, "sync.json")
-	if err := saveConfig(configFile, projectConfig); err != nil {
-		return *projectConfig, fmt.Errorf("failed to save updated project configuration: %w", err)
-	}
-	fs.configManager.SetProjectConfig(projectConfig)
-
-	// Sync the updated sync.json file to the remote
-	if err := fs.configManager.syncConfigToRemote(); err != nil {
-		return *projectConfig, fmt.Errorf("failed to sync the project configuration to the remote: %v", err)
+	// Save, set, and push the project configuration.
+	if err := fs.saveAndSyncConfig(projectConfig); err != nil {
+		return *projectConfig, err
 	}
 
 	return *projectConfig, nil
 }
 
+// Wrapper method to get the project config from the config manager
+func (fs *FolderService) getProjectConfig() (*ProjectConfig, error) {
+	projectConfig := fs.configManager.GetProjectConfig()
+	if projectConfig == nil {
+		return nil, fmt.Errorf("no project config is defined for project '%s'", fs.configManager.GetSelectedProject())
+	}
+
+	return projectConfig, nil
+}
+
+// Wrapper method to get the project's remote config from the config manager
+func (fs *FolderService) getProjectRemoteConfig() (*RemoteConfig, error) {
+	projectRemoteConfig := fs.configManager.GetSelectedProjectRemoteConfig()
+	if projectRemoteConfig == nil {
+		return nil, fmt.Errorf("selected project's remote configuration is not available")
+	}
+	return projectRemoteConfig, nil
+}
+
+// Common method to save the project sync.json file to disk, then push it up to the remote
+func (fs *FolderService) saveAndSyncConfig(projectConfig *ProjectConfig) error {
+	projectRemoteConfig, err := fs.getProjectRemoteConfig()
+	if err != nil {
+		return err
+	}
+
+	projectPath := projectRemoteConfig.LocalPath
+	configFile := filepath.Join(projectPath, "sync.json")
+
+	if err := saveConfig(configFile, projectConfig); err != nil {
+		return fmt.Errorf("failed to save updated project configuration: %w", err)
+	}
+
+	fs.configManager.SetProjectConfig(projectConfig)
+
+	if err := fs.configManager.syncConfigToRemote(); err != nil {
+		return fmt.Errorf("failed to sync the project configuration to the remote: %v", err)
+	}
+
+	return nil
+}
+
+// Util method to clean a given path string
 func normalizePath(path string) string {
 	// Replace backslashes with slashes and trim leading/trailing slashes
 	normalized := strings.ReplaceAll(path, "\\", "/")

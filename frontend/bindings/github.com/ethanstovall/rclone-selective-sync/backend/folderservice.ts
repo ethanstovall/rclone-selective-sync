@@ -25,6 +25,11 @@ export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { c
     return $resultPromise;
 }
 
+/**
+ * Given a target folder, scrub it out of the project configuration's folders. This does NOT delete the folder
+ * locally nor remotely. It only untracks it. Full deletions should be carefully handled manually with Rclone
+ * for now.
+ */
 export function DeregisterFolder(targetFolder: string): Promise<$models.ProjectConfig> & { cancel(): void } {
     let $resultPromise = $Call.ByID(1475157726, targetFolder) as any;
     let $typingPromise = $resultPromise.then(($result) => {
