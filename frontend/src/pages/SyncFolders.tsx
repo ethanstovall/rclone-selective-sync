@@ -1,6 +1,6 @@
 import { ComponentType } from "react";
-import ProjectDashboard from "../components/Project/ProjectDashboard";
-import ProjectSelector from "../components/Project/ProjectSelector";
+import ProjectDashboard from "../components/SyncFolders/ProjectDashboard";
+import ProjectSelector from "../components/SyncFolders/ProjectSelector";
 import { GlobalConfigContextProvider } from "../hooks/GlobalConfigContext";
 import { ProjectConfigContextProvider } from "../hooks/ProjectConfigContext";
 
