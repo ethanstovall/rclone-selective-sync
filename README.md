@@ -1,59 +1,86 @@
-# Welcome to Your New Wails3 Project!
+# Rclone Selective Sync
 
-Congratulations on generating your Wails3 application! This README will guide you through the next steps to get your project up and running.
+## Overview
+Rclone Selective Sync is a specialized tool designed for projects with a wide variety of large files and resources backed up to the cloud using Rclone. The tool enables users to efficiently manage their local file storage by selectively syncing folders from a project while protecting critical cloud backups.
 
-## Getting Started
+### Target Audience
+This tool is ideal for users managing projects where:
+- A significant portion of files are not needed locally during day-to-day work.
+- Projects involve large resources (e.g., VFX assets, rendered scenes, global resource libraries).
+- Cloud storage is used for backups, and there is a need to avoid accidental deletions during synchronization.
 
-1. Navigate to your project directory in the terminal.
+### Use Case Example
+A VFX project may have:
+- A global resources folder containing essential shared assets.
+- Dozens or hundreds of scene-specific folders with rendered assets, often large in size.
 
-2. To run your application in development mode, use the following command:
+When a scene is complete, its files are no longer needed locally. Instead of keeping everything on the local system or risking deletion from the cloud during Rclone syncs, users can selectively keep the relevant folders locally and minimize download times when switching to new scenes.
 
-   ```
-   wails3 dev
-   ```
+---
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+## Paradigm
+Rclone Selective Sync serves as a wrapper for Rclone, providing a user-friendly interface and added functionality. Below are key concepts:
 
-3. To build your application for production, use:
+### 1. Dependency on Rclone
+The app requires Rclone to be installed beforehand. It modifies/creates the user's default `rclone.conf` file, so users must ensure all Rclone remotes are specified in the app's configuration to avoid unintended effects on other remotes.
 
-   ```
-   wails3 build
-   ```
+### 2. Global Config
+The **Global Config** is used to define:
+- All Rclone remotes (currently supports Backblaze B2 only), including application keys, key IDs, bucket names, etc.
+- The local path where the project is stored on the user’s file system.
 
-   This will create a production-ready executable in the `build` directory.
+### 3. Project Config
+The **Project Config** is stored in a `sync.json` file at the root of each project folder. It contains:
+- Whether full project syncing is allowed.
+- A registry of individual folders for selective syncing.
 
-## Exploring Wails3 Features
+### 4. Folder Management
+Folders within a project can be:
+- **Registered**: Added to the `sync.json` for selective syncing.
+- **Updated**: Modified with aliases or descriptions.
+- **Deregistered**: Removed from the `sync.json` when no longer needed locally.
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+### 5. Ultimate Goal
+Enable users to:
+- Sync, download, or remove individual folders locally as needed.
+- Preserve cloud backups while reducing unnecessary local file storage.
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
-
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
-
-   ```
-   go run .
-   ```
-
-   Note: Some examples may be under development during the alpha phase.
-
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3alpha.wails.io/) for in-depth guides and API references.
-
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
+---
 
 ## Project Structure
 
-Take a moment to familiarize yourself with your project structure:
+### Backend
+The backend is implemented in Go and consists of:
 
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
+#### 1. Data Structures
+Key JSON-backed structures include:
+- **Global Config**: Defines Rclone remotes and the local project path.
+- **Project Config**: Defines folder syncing settings within a project.
 
-## Next Steps
+#### 2. Service Files
+- **Config Service**: Handles loading Global Config, creating the `rclone.conf` file, and managing Project Config.
+- **Folder Service**: Manages folder registration, updates, and deregistration.
+- **Sync Service**: Executes Rclone commands for syncing, downloading, or removing folders.
 
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
+### Frontend
+The frontend is built using Material-UI (MUI) and Toolpad for a polished and efficient interface.
 
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+#### 1. Components
+Reusable and page-specific components, styled with MUI theming to maintain a consistent look and feel.
+
+#### 2. Hooks
+Custom hooks provide context and manage state, including Global Config and Project Config. These abstractions ensure seamless integration with the backend.
+
+#### 3. Pages
+Simple, modular pages designed for:
+- Settings
+- Sync operations
+- Other app functionality
+
+Each page wraps root components in the necessary contexts to manage state and API calls.
+
+---
+
+## Usage
+_(To be completed with screenshots and examples)_
+
