@@ -92,7 +92,7 @@ Below are some examples of usage:
 ![image](https://github.com/user-attachments/assets/a2bd1969-d760-4211-91c3-9035aefae11c)
 
 ### Open a folder in the File Explorer
-![image](https://github.com/user-attachments/assets/6e18c6fa-0308-4535-9293-308aeca12f5f)
+![image](https://github.com/user-attachments/assets/ef31f3f7-3cb2-47c8-9e68-5d45c9b14122)
 
 ### Register, edit, or deregister a folder
 ![image](https://github.com/user-attachments/assets/105ce4b4-207b-4748-a1ab-75429a245662)
