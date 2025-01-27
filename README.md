@@ -31,14 +31,15 @@ The **Global Config** is used to define:
 
 ### 3. Project Config
 The **Project Config** is stored in a `sync.json` file at the root of each project folder. It contains:
-- Whether full project syncing is allowed.
+- Whether full project syncing is allowed (from the project root).
 - A registry of individual folders for selective syncing.
 
 ### 4. Folder Management
 Folders within a project can be:
 - **Registered**: Added to the `sync.json` for selective syncing.
-- **Updated**: Modified with aliases or descriptions.
-- **Deregistered**: Removed from the `sync.json` when no longer needed locally.
+- **Updated**: Modified (folder alias and description).
+- **Deregistered**: Removed from the `sync.json` when not intended to be selectively synced.
+- **Removed**: Removed from the local file system when no longer needed (deletion from both the local and remote project must be carried out manually with Rclone).
 
 ### 5. Ultimate Goal
 Enable users to:
