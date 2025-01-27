@@ -95,7 +95,7 @@ Below are some examples of usage:
 ![image](https://github.com/user-attachments/assets/ef31f3f7-3cb2-47c8-9e68-5d45c9b14122)
 
 ### Register, edit, or deregister a folder
-![image](https://github.com/user-attachments/assets/105ce4b4-207b-4748-a1ab-75429a245662)
+![image](https://github.com/user-attachments/assets/a077ce44-4397-4655-a69b-ad6190d2f6fe)
 ![image](https://github.com/user-attachments/assets/ee95968f-f6e2-4bdd-ac7d-13493887f8f1)
 ![image](https://github.com/user-attachments/assets/6edce182-977f-4520-9fa4-7663f59a662a)
 
