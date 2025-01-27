@@ -83,5 +83,42 @@ Each page wraps root components in the necessary contexts to manage state and AP
 ---
 
 ## Usage
-_(To be completed with screenshots and examples)_
+Below are some examples of usage:
+
+### Select a project
+![image](https://github.com/user-attachments/assets/c8f9cb0e-506d-4080-867f-39387008b781)
+
+### Describe a folder (click it)
+![image](https://github.com/user-attachments/assets/a2bd1969-d760-4211-91c3-9035aefae11c)
+
+### Open a folder in the File Explorer
+![image](https://github.com/user-attachments/assets/6e18c6fa-0308-4535-9293-308aeca12f5f)
+
+### Register, edit, or deregister a folder
+![image](https://github.com/user-attachments/assets/105ce4b4-207b-4748-a1ab-75429a245662)
+![image](https://github.com/user-attachments/assets/ee95968f-f6e2-4bdd-ac7d-13493887f8f1)
+![image](https://github.com/user-attachments/assets/6edce182-977f-4520-9fa4-7663f59a662a)
+
+### Download remote folders
+![image](https://github.com/user-attachments/assets/bf7c2a9d-a324-4126-aa32-52bd09fe0f00)
+
+### Remove local folders
+![image](https://github.com/user-attachments/assets/52cae900-6bf4-4328-8ad7-3c9266c44af7)
+
+### Push updates to or pull updates from remote
+![image](https://github.com/user-attachments/assets/586ccb90-72db-4272-a034-8c620831bd49)
+
+Note that the user has the opportunity to first review the staged changes before pushing to or pulling from the remote with Rclone.
+![image](https://github.com/user-attachments/assets/5d4bfb5f-7784-4dc0-b141-f349f7d0deae)
+
+
+
+
+
+
+
+
+
+
+
 
