@@ -139,6 +139,7 @@ export class RemoteConfig {
     "account": string;
     "key": string;
     "local_path": string;
+    "full_backup_path": string;
 
     /** Creates a new RemoteConfig instance. */
     constructor($$source: Partial<RemoteConfig> = {}) {
@@ -159,6 +160,9 @@ export class RemoteConfig {
         }
         if (!("local_path" in $$source)) {
             this["local_path"] = "";
+        }
+        if (!("full_backup_path" in $$source)) {
+            this["full_backup_path"] = "";
         }
 
         Object.assign(this, $$source);

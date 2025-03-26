@@ -6,12 +6,13 @@ type GlobalConfig struct {
 }
 
 type RemoteConfig struct {
-	RemoteName string `json:"remote_name"`
-	BucketName string `json:"bucket_name"`
-	Type       string `json:"type"`
-	Account    string `json:"account"`
-	Key        string `json:"key"`
-	LocalPath  string `json:"local_path"`
+	RemoteName     string `json:"remote_name"`
+	BucketName     string `json:"bucket_name"`
+	Type           string `json:"type"`
+	Account        string `json:"account"`
+	Key            string `json:"key"`
+	LocalPath      string `json:"local_path"`
+	FullBackupPath string `json:"full_backup_path"`
 }
 
 func (gc *GlobalConfig) ToJSON() (string, error) {
