@@ -14,11 +14,11 @@ export interface ProjectSelectorChildProps {
     projectConfig: ProjectConfig;
 }
 
-interface ProjectSelector {
+interface ProjectSelectorProps {
     ProjectSelectorChild: React.FC<ProjectSelectorChildProps>;
 }
 
-const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) => {
+const ProjectSelector: React.FC<ProjectSelectorProps> = ({ ProjectSelectorChild }) => {
 
     // State for global config
     const { globalConfig: globalConfig, selectedProject, isLoadingGlobalConfig, setSelectedProject } = useGlobalConfig();
@@ -44,41 +44,39 @@ const ProjectSelector: React.FC<ProjectSelector> = ({ ProjectSelectorChild }) =>
     }
 
     return (
-        <Grid2 container spacing={1} height={650}>
-            {
-                <Grid2 size={8} height={"10%"}>
-                    {
-                        (!isLoadingGlobalConfig) ? (
-                            <Box display={"flex"} alignItems="center">
-                                <FormControl sx={{ m: 1, minWidth: "60%" }}>
-                                    <HeaderSelectMenu
-                                        value={selectedProject ?? ''}
-                                        onChange={handleChange}
-                                        displayEmpty
-                                        inputProps={{ 'aria-label': 'Selected Project' }}
-                                        renderValue={(selected) => (
-                                            <HeaderTypography color="primary">
-                                                {selected as string ?? ''}
-                                            </HeaderTypography>
-                                        )}
-                                    >
-                                        {
-                                            projectOptions.map((option) => (
-                                                <MenuItem key={option} value={option}>{option}</MenuItem>
-                                            ))
-                                        }
-                                    </HeaderSelectMenu>
-                                </FormControl>
-                                <ActionIconButton onClick={handleOpenFolder} inputIcon={OpenInNewRounded} color="primary" />
-                            </Box>
+        <Grid2 container spacing={1} height={800}>
+            <Grid2 size={8} height={"10%"}>
+                {
+                    (!isLoadingGlobalConfig) ? (
+                        <Box display={"flex"} alignItems="center">
+                            <FormControl sx={{ m: 1, minWidth: "60%" }}>
+                                <HeaderSelectMenu
+                                    value={selectedProject ?? ''}
+                                    onChange={handleChange}
+                                    displayEmpty
+                                    inputProps={{ 'aria-label': 'Selected Project' }}
+                                    renderValue={(selected) => (
+                                        <HeaderTypography color="primary">
+                                            {selected as string ?? ''}
+                                        </HeaderTypography>
+                                    )}
+                                >
+                                    {
+                                        projectOptions.map((option) => (
+                                            <MenuItem key={option} value={option}>{option}</MenuItem>
+                                        ))
+                                    }
+                                </HeaderSelectMenu>
+                            </FormControl>
+                            <ActionIconButton onClick={handleOpenFolder} inputIcon={OpenInNewRounded} color="primary" />
+                        </Box>
 
 
-                        ) : (
-                            <FullHeightSkeleton />
-                        )
-                    }
-                </Grid2>
-            }
+                    ) : (
+                        <FullHeightSkeleton />
+                    )
+                }
+            </Grid2>
             <Grid2 size={12} height={"90%"}>
                 {
                     (projectConfig && !isLoadingProject) ? (
