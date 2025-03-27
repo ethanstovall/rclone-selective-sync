@@ -110,6 +110,7 @@ func (ss *SyncService) ExecuteFullBackup(dry bool) []RcloneActionOutput {
 	// Get the remote config from the global config.
 	selectedProject := ss.configManager.GetGlobalConfig().SelectedProject
 	remoteConfig := ss.configManager.GetGlobalConfig().Remotes[selectedProject]
+	selectedProject = selectedProject + " - Backup"
 	// Because we're syncing the entire project to the backup location, just get the top level paths (not folders) for the
 	// local and remote locations.
 	fullLocalPath := remoteConfig.FullBackupPath

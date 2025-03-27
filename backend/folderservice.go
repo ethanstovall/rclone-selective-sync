@@ -26,9 +26,17 @@ func (fs *FolderService) OpenFolder(targetFolder string) error {
 		return fmt.Errorf("selected project's remote configuration is not available")
 	}
 
-	// Get the folder paths for the project
+	// Get the folder paths for the project. TODO consider refactoring this so that common functionality
+	//	 is pulled out and called from separate OpenFolder, OpenProject, and OpenBackup methods.
 	var fullLocalPath = ""
-	if targetFolder != "" {
+	if targetFolder == "" {
+		// No target folder was given. Just open the root project folder.
+		fullLocalPath = filepath.Join(projectRemoteConfig.LocalPath)
+	} else if targetFolder == "BACKUP" {
+		// The special "BACKUP" string was passed. Open the backup location.
+		fullLocalPath = filepath.Join(projectRemoteConfig.FullBackupPath)
+	} else {
+		// A target folder was given. Open it.
 		projectFolderConfigs := fs.configManager.GetProjectConfig().Folders
 		folderConfig, exists := projectFolderConfigs[targetFolder]
 		if !exists {
@@ -36,8 +44,6 @@ func (fs *FolderService) OpenFolder(targetFolder string) error {
 		}
 		// Construct the full local path
 		fullLocalPath = filepath.Join(projectRemoteConfig.LocalPath, folderConfig.LocalPath)
-	} else {
-		fullLocalPath = filepath.Join(projectRemoteConfig.LocalPath)
 	}
 
 	if _, err := os.Stat(fullLocalPath); os.IsNotExist(err) {

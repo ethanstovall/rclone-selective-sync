@@ -78,7 +78,7 @@ function App() {
     components: {
       MuiButton: {
         styleOverrides: {
-          root: { minWidth: "120px", minHeight: "50px" }
+          root: { minWidth: "150px", minHeight: "50px" }
         }
       }
     }

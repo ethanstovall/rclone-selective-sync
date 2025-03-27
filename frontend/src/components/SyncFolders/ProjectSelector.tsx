@@ -1,14 +1,10 @@
-import { Box, FormControl, Grid2, MenuItem, SelectChangeEvent } from "@mui/material";
+import { Grid2 } from "@mui/material";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
 import { useMemo } from "react";
 import { ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models";
-import HeaderTypography from "../common/HeaderTypography";
-import HeaderSelectMenu from "../common/HeaderSelectMenu";
 import FullHeightSkeleton from "../common/FullHeightSkeleton";
 import { useProjectConfig } from "../../hooks/ProjectConfigContext";
-import ActionIconButton from "../common/ActionIconButton";
-import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
-import { OpenInNewRounded } from "@mui/icons-material";
+import ProjectSelectorControlBar from "./ProjectSelectorControlBar";
 
 export interface ProjectSelectorChildProps {
     projectConfig: ProjectConfig;
@@ -30,48 +26,16 @@ const ProjectSelector: React.FC<ProjectSelectorProps> = ({ ProjectSelectorChild 
         return Object.keys(globalConfig?.remotes ?? {}) || ["None"];
     }, [globalConfig?.remotes]);
 
-    const handleChange = (event: SelectChangeEvent<unknown>, child: React.ReactNode) => {
-        setSelectedProject(event.target.value as string);
-    };
-
-    // Open the selected folder in the user's file explorer
-    const handleOpenFolder = async () => {
-        try {
-            await FolderService.OpenFolder("")
-        } catch (e: any) {
-            console.error(e);
-        }
-    }
-
     return (
         <Grid2 container spacing={1} height={800}>
             <Grid2 size={8} height={"10%"}>
                 {
                     (!isLoadingGlobalConfig) ? (
-                        <Box display={"flex"} alignItems="center">
-                            <FormControl sx={{ m: 1, minWidth: "60%" }}>
-                                <HeaderSelectMenu
-                                    value={selectedProject ?? ''}
-                                    onChange={handleChange}
-                                    displayEmpty
-                                    inputProps={{ 'aria-label': 'Selected Project' }}
-                                    renderValue={(selected) => (
-                                        <HeaderTypography color="primary">
-                                            {selected as string ?? ''}
-                                        </HeaderTypography>
-                                    )}
-                                >
-                                    {
-                                        projectOptions.map((option) => (
-                                            <MenuItem key={option} value={option}>{option}</MenuItem>
-                                        ))
-                                    }
-                                </HeaderSelectMenu>
-                            </FormControl>
-                            <ActionIconButton onClick={handleOpenFolder} inputIcon={OpenInNewRounded} color="primary" />
-                        </Box>
-
-
+                        <ProjectSelectorControlBar
+                            selectedProject={selectedProject}
+                            projectOptions={projectOptions}
+                            setSelectedProject={setSelectedProject}
+                        />
                     ) : (
                         <FullHeightSkeleton />
                     )

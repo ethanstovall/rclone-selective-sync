@@ -129,7 +129,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     return (
         (projectConfig.folders) ? (
             <Grid2 container spacing={1} size={12} height={"100%"}>
-                <Grid2 container spacing={1} size={6} height={"100%"} display={"table"}>
+                <Grid2 container spacing={1} size={7} height={"100%"} display={"table"}>
                     {/* Control Bar */}
                     <Grid2
                         size={12}
@@ -226,7 +226,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                         />
                     </Grid2>
                 </Grid2>
-                <Grid2 container spacing={0} size={6} height={"100%"}>
+                <Grid2 container spacing={0} size={5} height={"100%"}>
                     <FocusedFolderControls
                         focusedFolder={focusedFolder}
                         localFolders={localFolders}
