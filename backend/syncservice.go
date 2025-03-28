@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -146,4 +147,23 @@ func (ss *SyncService) ExecuteFullBackup(dry bool) []RcloneActionOutput {
 		}
 	}
 	return outputs
+}
+
+// Detect which of the given local folders have any updates. This is a naive check, as it does no checks on modified time to see
+// whether the changes are local or upstream. It's up to the user to be careful.
+// TODO: Flesh this check out, possibly using "rclone check", especially in cases where multiple users are working on the project at once.
+func (ss *SyncService) DetectChangedFolders(localFolders []string) []string {
+	// Run a parallel test sync for all the local folders to detect changes.
+	dryRunOutput := ss.ExecuteRcloneAction(localFolders, SYNC_PUSH, true)
+
+	// Collect folders where the output indicates a change.
+	var changedFolders []string
+	for _, output := range dryRunOutput {
+		// The "--dry-run" string only appears if any files show up in the debug output. If not, this won't be there.
+		if strings.Contains(output.CommandOutput, "--dry-run") {
+			changedFolders = append(changedFolders, output.TargetFolder)
+		}
+	}
+
+	return changedFolders
 }

@@ -10,12 +10,26 @@ import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 import * as $models from "./models.js";
 
 /**
+ * Detect which of the given local folders have any updates. This is a naive check, as it does no checks on modified time to see
+ * whether the changes are local or upstream. It's up to the user to be careful.
+ * TODO: Flesh this check out, possibly using "rclone check", especially in cases where multiple users are working on the project at once.
+ */
+export function DetectChangedFolders(localFolders: string[]): Promise<string[]> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(2751813025, localFolders) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
+        return $$createType0($result);
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
+}
+
+/**
  * This function performs the full backup to the specified location for the configured remote.
  */
 export function ExecuteFullBackup(dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
     let $resultPromise = $Call.ByID(1373287177, dry) as any;
     let $typingPromise = $resultPromise.then(($result) => {
-        return $$createType1($result);
+        return $$createType2($result);
     }) as any;
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
@@ -27,12 +41,13 @@ export function ExecuteFullBackup(dry: boolean): Promise<$models.RcloneActionOut
 export function ExecuteRcloneAction(targetFolders: string[], action: $models.RcloneAction, dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
     let $resultPromise = $Call.ByID(1430199943, targetFolders, action, dry) as any;
     let $typingPromise = $resultPromise.then(($result) => {
-        return $$createType1($result);
+        return $$createType2($result);
     }) as any;
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
 }
 
 // Private type creation functions
-const $$createType0 = $models.RcloneActionOutput.createFrom;
-const $$createType1 = $Create.Array($$createType0);
+const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = $models.RcloneActionOutput.createFrom;
+const $$createType2 = $Create.Array($$createType1);

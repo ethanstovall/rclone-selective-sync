@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { Autocomplete, FormControlLabel, Grid2, Paper, Switch, TextField, Typography } from "@mui/material";
-import { CleaningServices, CloudUpload, CloudDownload, Download, CreateNewFolderRounded } from "@mui/icons-material";
+import { CleaningServices, CloudUpload, CloudDownload, Download, CreateNewFolderRounded, Checklist } from "@mui/icons-material";
 import FolderTree from "./FolderTree.tsx";
 import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
 import RcloneActionDialog from "./RcloneActionDialog.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
 import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
-import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
+import { FolderService, SyncService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 import StandardDialog from "../common/StandardDialog.tsx";
 import FocusedFolderControls from "./FocusedFolderControls.tsx";
 import NewFolderDialog from "./NewFolderDialog.tsx";
@@ -37,6 +37,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // State for all folders which are in the user's file system
     const [localFolders, setLocalFolders] = useState<string[]>([]);
     const [isLoadingLocalFolders, setIsLoadingLocalFolders] = useState<boolean>(true);
+    const [isDetectingChanges, setIsDetectingChanges] = useState<boolean>(false);
 
     // State for whether to show local or nonlocal folders
     const [isShowLocal, setIsShowLocal] = useState<boolean>(true);
@@ -109,15 +110,31 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         loadLocalFolders();
     }
 
+    // Call the backend endpoint responsible for detecting which project folders are downloaded locally.
     const loadLocalFolders = async () => {
         try {
             setIsLoadingLocalFolders(true);
             const loadedLocalFolders = await FolderService.GetLocalFolders();
             setLocalFolders(loadedLocalFolders);
+            // Return the loaded local folders for any caller that needs to know them.
+            return loadedLocalFolders;
         } catch (error: any) {
             console.error(`Error loading local folders:`, error);
         } finally {
             setIsLoadingLocalFolders(false);
+        }
+    }
+
+    const markChangedFolders = async () => {
+        const localFolders = await loadLocalFolders();
+        try {
+            setIsDetectingChanges(true);
+            const changedFolders = await SyncService.DetectChangedFolders(localFolders ?? []);
+            setTargetFolders(changedFolders);
+        } catch (error: any) {
+            console.error(`Error detecting changes in local folders:`, error);
+        } finally {
+            setIsDetectingChanges(false);
         }
     }
 
@@ -141,14 +158,17 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                         height={"14%"}
                     >
                         <FormControlLabel control={<Switch checked={isShowLocal} onChange={() => { setIsShowLocal((prev) => (!prev)); setTargetFolders([]); }} />} label="Local" />
-                        <Autocomplete
-                            freeSolo
-                            options={Object.keys(projectConfig.folders).sort()}
-                            value={searchTerm}
-                            onInputChange={handleSearchChange}
-                            renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
-                            sx={{ width: "100%" }}
-                        />
+                        {
+                            (isShowLocal) &&
+                            <ActionIconButton
+                                tooltip="Select All Changed"
+                                color="primary"
+                                disabled={false}
+                                loading={isLoadingLocalFolders || isDetectingChanges}
+                                inputIcon={Checklist}
+                                onClick={markChangedFolders}
+                            />
+                        }
                         {
                             (isShowLocal) &&
                             <ActionIconButton
@@ -160,6 +180,14 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                                 onClick={() => setIsNewFolderDialogOpen(true)}
                             />
                         }
+                        <Autocomplete
+                            freeSolo
+                            options={Object.keys(projectConfig.folders).sort()}
+                            value={searchTerm}
+                            onInputChange={handleSearchChange}
+                            renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
+                            sx={{ width: "100%" }}
+                        />
                         {
                             (isShowLocal) &&
                             <ActionIconButton
