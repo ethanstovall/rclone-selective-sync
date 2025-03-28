@@ -105,6 +105,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         } finally {
             setIsDeletingLocal(false);
             setIsDeleteDialogOpen(false);
+            setTargetFolders([]);
         }
         // Last, reload the local folders so that the updates are reflected in the folder tree.
         loadLocalFolders();
