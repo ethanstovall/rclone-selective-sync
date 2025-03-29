@@ -101,6 +101,7 @@ const RcloneActionOutputTabs: React.FunctionComponent<RcloneActionOutputTabsProp
                     onChange={handleTabChange}
                     aria-label="Rclone folder tabs"
                     centered
+                    variant="scrollable"
                 >
                     {rcloneActionOuputs.map((output, index) => (
                         <StyledTab
