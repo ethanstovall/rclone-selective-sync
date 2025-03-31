@@ -101,7 +101,7 @@ const RcloneActionOutputTabs: React.FunctionComponent<RcloneActionOutputTabsProp
                     onChange={handleTabChange}
                     aria-label="Rclone folder tabs"
                     centered
-                    variant="scrollable"
+                // variant="scrollable"  This causes the tabs to not be centered despite centered being set.
                 >
                     {rcloneActionOuputs.map((output, index) => (
                         <StyledTab
