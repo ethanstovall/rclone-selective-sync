@@ -170,6 +170,10 @@ func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig Fo
 
 	// Normalize the local path
 	folderConfig.LocalPath = normalizePath(folderConfig.LocalPath)
+	// Remove projectRemoteConfig.LocalPath prefix from folderConfig.LocalPath
+	folderConfig.LocalPath = strings.TrimPrefix(folderConfig.LocalPath, projectRemoteConfig.LocalPath)
+	// Remove any leading slashes (Unix or Windows style)
+	folderConfig.LocalPath = strings.TrimLeft(folderConfig.LocalPath, `/\`)
 	// Set remotePath to be identical to LocalPath
 	folderConfig.RemotePath = folderConfig.LocalPath
 	// Verify no other folder with the same key exists
