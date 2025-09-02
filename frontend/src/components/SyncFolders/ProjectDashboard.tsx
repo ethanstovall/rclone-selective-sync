@@ -50,17 +50,6 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         setSearchTerm(value);
     };
 
-    // Memoize the filtered folders based on the search term.
-    const filteredFolders = useMemo(() => {
-        if (!projectConfig?.folders) {
-            return [];
-        }
-
-        return Object.keys(projectConfig.folders).filter((name) =>
-            name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [projectConfig?.folders, searchTerm]);
-
 
     const handleRcloneDialogClose = async (event, reason) => {
         if (reason === 'backdropClick' && isRunningRcloneAction) {
@@ -240,7 +229,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             projectConfig={projectConfig}
                             localFolders={localFolders}
                             isLoadingLocalFolders={isLoadingLocalFolders}
-                            filteredFolders={filteredFolders}
+                            searchTerm={searchTerm}
                             targetFolders={targetFolders}
                             focusedFolder={focusedFolder}
                             setFocusedFolder={setFocusedFolder}

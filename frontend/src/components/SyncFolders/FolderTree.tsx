@@ -11,12 +11,12 @@ const FolderTree: React.FunctionComponent<{
     projectConfig: ProjectConfig | undefined;
     localFolders: string[];
     isLoadingLocalFolders: boolean;
-    filteredFolders: string[] | undefined;
+    searchTerm: string;
     targetFolders: string[];
     focusedFolder: string | null;
     setFocusedFolder: (folderNameInfo: string | null) => void;
     setTargetFolders: (targetFolders: string[]) => void;
-}> = ({ isShowLocal, projectConfig, localFolders, isLoadingLocalFolders, filteredFolders, targetFolders, focusedFolder, setFocusedFolder, setTargetFolders }) => {
+}> = ({ isShowLocal, projectConfig, localFolders, isLoadingLocalFolders, searchTerm, targetFolders, focusedFolder, setFocusedFolder, setTargetFolders }) => {
 
     const displayFolders: string[] = useMemo(() => {
         if (!projectConfig?.folders) {
@@ -25,14 +25,18 @@ const FolderTree: React.FunctionComponent<{
 
         if (isShowLocal) {
             // Show all local folders when `isShowLocal` is true
-            return [...localFolders].sort();
+            return [...localFolders].filter((name) =>
+                name.toLowerCase().includes(searchTerm.toLowerCase())
+            ).sort();
         } else {
             // Show only folders in `projectConfig.folders` that are not in `localFolders`
             return Object.keys(projectConfig.folders).filter(
                 folder => !localFolders.includes(folder)
+            ).filter((name) =>
+                name.toLowerCase().includes(searchTerm.toLowerCase())
             ).sort();
         }
-    }, [localFolders, projectConfig?.folders, isShowLocal]);
+    }, [localFolders, projectConfig?.folders, isShowLocal, searchTerm]);
 
     const handleTargetFolder = (value: string) => () => {
         const currentIndex = targetFolders.indexOf(value);
