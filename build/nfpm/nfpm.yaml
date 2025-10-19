@@ -21,7 +21,7 @@ contents:
     dst: "/usr/local/bin/rclone-selective-sync"
   - src: "./build/appicon.png"
     dst: "/usr/share/icons/hicolor/128x128/apps/rclone-selective-sync.png"
-  - src: "./build/rclone-selective-sync.desktop"
+  - src: "./build/appimage/rclone-selective-sync.desktop"
     dst: "/usr/share/applications/rclone-selective-sync.desktop"
 
 depends:
