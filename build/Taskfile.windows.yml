@@ -7,7 +7,6 @@ tasks:
   build:
     summary: Builds the application for Windows
     deps:
-      - task: common:go:mod:tidy
       - task: common:build:frontend
       # Note: common:generate:icons is run via generate:syso dependency (syso generation needs icon.ico)
       - task: generate:syso

@@ -7,7 +7,6 @@ tasks:
   build:
     summary: Builds the application for Linux
     deps:
-      - task: common:go:mod:tidy
       - task: common:build:frontend
       - task: common:generate:icons
     cmds:
