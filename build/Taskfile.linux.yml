@@ -93,8 +93,8 @@ tasks:
 
   generate:aur:
     summary: Creates a arch linux packager package
-    cmds: 
-      - wails3 tool package -name {{.APP_NAME}} -format arch -config ./build/nfpm/nfpm.yaml
+    cmds:
+      - wails3 tool package -name {{.APP_NAME}} -format archlinux -config ./build/nfpm/nfpm.yaml
 
   generate:dotdesktop:
     summary: Generates a `.desktop` file
