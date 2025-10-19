@@ -8,7 +8,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import {Call as $Call, Create as $Create} from "@wailsio/runtime";
+import { Call as $Call, Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -33,11 +33,26 @@ export function LoadGlobalConfig(): Promise<[$models.GlobalConfig, string]> & { 
 }
 
 /**
- * Navigate to the specified project directory and find the sync.json config file. If it is not found,
- * create a blank one.
+ * Navigate to the specified project directory and find the sync.json config file. If the project
+ * path doesn't exist, create it. If sync.json is not found locally, attempt to pull it from the
+ * remote. If it doesn't exist remotely either, create a blank one locally.
  */
 export function LoadSelectedProjectConfig(): Promise<$models.ProjectConfig> & { cancel(): void } {
     let $resultPromise = $Call.ByID(3182534090) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
+        return $$createType1($result);
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
+}
+
+/**
+ * RefreshSyncFile manually refreshes the sync.json from the remote, overwriting the local copy.
+ * This is intended to be called by the user via a "Refresh" button in the UI.
+ * Returns the updated ProjectConfig and any error encountered.
+ */
+export function RefreshSyncFile(): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(3554693892) as any;
     let $typingPromise = $resultPromise.then(($result) => {
         return $$createType1($result);
     }) as any;

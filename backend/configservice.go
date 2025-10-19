@@ -29,8 +29,9 @@ func (cs *ConfigService) SetSelectedProject(selectedProject string) error {
 	return err
 }
 
-// Navigate to the specified project directory and find the sync.json config file. If it is not found,
-// create a blank one.
+// Navigate to the specified project directory and find the sync.json config file. If the project
+// path doesn't exist, create it. If sync.json is not found locally, attempt to pull it from the
+// remote. If it doesn't exist remotely either, create a blank one locally.
 func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 	var err error
 	// Create a new default config file
@@ -39,20 +40,46 @@ func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 	if selectedProject == "" {
 		return *defaultConfig, errors.New("no project was selected; cannot load config")
 	}
-	projectPath := cs.configManager.globalConfig.Remotes[selectedProject].LocalPath
+
+	remoteConfig := cs.configManager.globalConfig.Remotes[selectedProject]
+	projectPath := remoteConfig.LocalPath
 	configFile := filepath.Join(projectPath, "sync.json")
 
-	// Load or create the config file
-	if _, fileErr := os.Stat(configFile); os.IsNotExist(fileErr) {
-		if saveErr := saveConfig(configFile, defaultConfig); saveErr != nil {
-			err = fmt.Errorf("failed to create default config file: %v", saveErr)
+	// Step 1: Ensure the project directory exists
+	if _, dirErr := os.Stat(projectPath); os.IsNotExist(dirErr) {
+		fmt.Printf("Project directory does not exist, creating: %s\n", projectPath)
+		if mkdirErr := os.MkdirAll(projectPath, 0755); mkdirErr != nil {
+			return *defaultConfig, fmt.Errorf("failed to create project directory: %v", mkdirErr)
 		}
-		cs.configManager.SetProjectConfig(defaultConfig)
-		fmt.Println("Created new default configuration file at", configFile)
+	}
+
+	// Step 2: Check if sync.json exists locally
+	if _, fileErr := os.Stat(configFile); os.IsNotExist(fileErr) {
+		fmt.Println("sync.json not found locally, attempting to pull from remote...")
+
+		// Try to pull sync.json from remote
+		pullErr := cs.pullSyncFileFromRemote()
+		if pullErr != nil {
+			// Remote doesn't have sync.json either, create a blank one locally
+			fmt.Printf("Could not pull sync.json from remote (%v), creating blank config locally\n", pullErr)
+			if saveErr := saveConfig(configFile, defaultConfig); saveErr != nil {
+				err = fmt.Errorf("failed to create default config file: %v", saveErr)
+			}
+			cs.configManager.SetProjectConfig(defaultConfig)
+			fmt.Println("Created new default configuration file at", configFile)
+		} else {
+			// Successfully pulled from remote, now load it
+			fmt.Println("Successfully pulled sync.json from remote")
+			loadedConfig, loadErr := loadConfig[ProjectConfig](configFile)
+			if loadErr != nil {
+				return *defaultConfig, fmt.Errorf("failed to load pulled config: %v", loadErr)
+			}
+			cs.configManager.SetProjectConfig(loadedConfig)
+		}
 	} else {
-		// Load the existing config file
+		// sync.json exists locally, load it
 		loadedConfig, loadErr := loadConfig[ProjectConfig](configFile)
-		fmt.Println(configFile)
+		fmt.Println("Loaded existing sync.json from:", configFile)
 		if loadErr != nil {
 			err = loadErr
 		}
@@ -161,4 +188,61 @@ func getDefaultRcloneConfigPath() (string, error) {
 	configPath := strings.TrimSpace(lines[1])
 	configPath = filepath.Clean(configPath)
 	return configPath, nil
+}
+
+// pullSyncFileFromRemote pulls the sync.json file from the remote to the local project path.
+// Returns an error if the remote file doesn't exist or the pull fails.
+func (cs *ConfigService) pullSyncFileFromRemote() error {
+	selectedProject := cs.configManager.GetSelectedProject()
+	if selectedProject == "" {
+		return errors.New("no project selected")
+	}
+
+	remoteConfig := cs.configManager.globalConfig.Remotes[selectedProject]
+	projectPath := remoteConfig.LocalPath
+	configFile := filepath.Join(projectPath, "sync.json")
+	remotePath := fmt.Sprintf("%s:%s/sync.json", remoteConfig.RemoteName, remoteConfig.BucketName)
+
+	// Use rclone copyto to pull the single file
+	cmd := exec.Command("rclone", "copyto", remotePath, configFile)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("rclone copyto failed: %s, output: %s", err, string(output))
+	}
+
+	fmt.Printf("Successfully pulled sync.json from %s to %s\n", remotePath, configFile)
+	return nil
+}
+
+// RefreshSyncFile manually refreshes the sync.json from the remote, overwriting the local copy.
+// This is intended to be called by the user via a "Refresh" button in the UI.
+// Returns the updated ProjectConfig and any error encountered.
+func (cs *ConfigService) RefreshSyncFile() (ProjectConfig, error) {
+	defaultConfig := &ProjectConfig{}
+	selectedProject := cs.configManager.GetSelectedProject()
+	if selectedProject == "" {
+		return *defaultConfig, errors.New("no project selected")
+	}
+
+	// Pull the latest sync.json from remote
+	fmt.Println("Refreshing sync.json from remote...")
+	if err := cs.pullSyncFileFromRemote(); err != nil {
+		return *defaultConfig, fmt.Errorf("failed to refresh sync.json: %v", err)
+	}
+
+	// Reload the config from disk
+	remoteConfig := cs.configManager.globalConfig.Remotes[selectedProject]
+	projectPath := remoteConfig.LocalPath
+	configFile := filepath.Join(projectPath, "sync.json")
+
+	loadedConfig, loadErr := loadConfig[ProjectConfig](configFile)
+	if loadErr != nil {
+		return *defaultConfig, fmt.Errorf("failed to load refreshed config: %v", loadErr)
+	}
+
+	// Update the config manager with the new config
+	cs.configManager.SetProjectConfig(loadedConfig)
+	fmt.Println("sync.json refreshed successfully")
+
+	return *loadedConfig, nil
 }
