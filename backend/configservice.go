@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -170,7 +169,7 @@ func handleRcloneConfig(globalConfig *GlobalConfig) error {
 
 // getDefaultRcloneConfigPath gets the default Rclone config file path by executing "rclone config file".
 func getDefaultRcloneConfigPath() (string, error) {
-	cmd := exec.Command("rclone", "config", "file")
+	cmd := createCommand("rclone", "config", "file")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to run 'rclone config file': %v", err)
@@ -204,7 +203,7 @@ func (cs *ConfigService) pullSyncFileFromRemote() error {
 	remotePath := fmt.Sprintf("%s:%s/sync.json", remoteConfig.RemoteName, remoteConfig.BucketName)
 
 	// Use rclone copyto to pull the single file
-	cmd := exec.Command("rclone", "copyto", remotePath, configFile)
+	cmd := createCommand("rclone", "copyto", remotePath, configFile)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("rclone copyto failed: %s, output: %s", err, string(output))

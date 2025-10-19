@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -53,11 +52,11 @@ func (fs *FolderService) OpenFolder(targetFolder string) error {
 	// Open the folder based on the OS
 	switch runtime.GOOS {
 	case "windows":
-		return exec.Command("explorer", fullLocalPath).Start()
+		return createCommand("explorer", fullLocalPath).Start()
 	case "darwin":
-		return exec.Command("open", fullLocalPath).Start()
+		return createCommand("open", fullLocalPath).Start()
 	case "linux":
-		return exec.Command("xdg-open", fullLocalPath).Start()
+		return createCommand("xdg-open", fullLocalPath).Start()
 	default:
 		return fmt.Errorf("unsupported platform")
 	}

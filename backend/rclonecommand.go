@@ -32,7 +32,7 @@ func NewRcloneCommand(fullRemotePath string, fullLocalPath string, action Rclone
 	}
 
 	// Construct the command with the appropriate arguments
-	cmd = exec.Command("rclone", args...)
+	cmd = createCommand("rclone", args...)
 
 	return &RcloneCommand{command: cmd}, nil
 }
