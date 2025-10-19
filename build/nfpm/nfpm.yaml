@@ -10,9 +10,9 @@ version: "{{.VERSION}}"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "My Product Description"
-vendor: "My Company"
-homepage: "https://wails.io"
+description: "Selective syncing of subfolders in remote storage using Rclone"
+vendor: "Ethan Stovall"
+homepage: "https://github.com/ethanstovall/rclone-selective-sync"
 license: "MIT"
 release: "1"
 

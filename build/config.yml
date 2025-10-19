@@ -5,12 +5,12 @@ version: '3'
 
 # This information is used to generate the build assets.
 info:
-  companyName: "My Company" # The name of the company
-  productName: "My Product" # The name of the application
-  productIdentifier: "com.mycompany.myproduct" # The unique product identifier
-  description: "A program that does X" # The application description
-  copyright: "(c) 2024, My Company" # Copyright text
-  comments: "Some Product Comments" # Comments
+  companyName: "Ethan Stovall" # The name of the company
+  productName: "Rclone Selective Sync" # The name of the application
+  productIdentifier: "com.ethanstovall.rclone-selective-sync" # The unique product identifier
+  description: "Selective syncing of subfolders in remote storage using Rclone" # The application description
+  copyright: "(c) 2025, Ethan Stovall" # Copyright text
+  comments: "A GUI tool for managing Rclone selective sync operations" # Comments
   version: "{{.VERSION}}" # The application version (injected from version.txt)
 
 # Dev mode configuration

@@ -5,11 +5,11 @@
 	"info": {
 		"0000": {
 			"ProductVersion": "{{.VERSION}}",
-			"CompanyName": "My Company",
-			"FileDescription": "My Product Description",
-			"LegalCopyright": "© now, My Company",
-			"ProductName": "My Product",
-			"Comments": "This is a comment"
+			"CompanyName": "Ethan Stovall",
+			"FileDescription": "Selective syncing of subfolders in remote storage using Rclone",
+			"LegalCopyright": "(c) 2025, Ethan Stovall",
+			"ProductName": "Rclone Selective Sync",
+			"Comments": "A GUI tool for managing Rclone selective sync operations"
 		}
 	}
 }

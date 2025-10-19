@@ -4,19 +4,17 @@
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleName</key>
-        <string>My Product</string>
-        <key>CFBundleExecutable</key>
-        <string>rclone-selective-sync.exe</string>
-        <key>CFBundleIdentifier</key>
-        <string>com.wails.rclone-selective-sync</string>
-        <key>CFBundleDisplayName</key>
         <string>Rclone Selective Sync</string>
+        <key>CFBundleExecutable</key>
+        <string>rclone-selective-sync</string>
+        <key>CFBundleIdentifier</key>
+        <string>com.ethanstovall.rclone-selective-sync</string>
         <key>CFBundleVersion</key>
-        <string>0.1.0</string>
+        <string>{{.VERSION}}</string>
         <key>CFBundleGetInfoString</key>
-        <string>This is a comment</string>
+        <string>A GUI tool for managing Rclone selective sync operations</string>
         <key>CFBundleShortVersionString</key>
-        <string>0.1.0</string>
+        <string>{{.VERSION}}</string>
         <key>CFBundleIconFile</key>
         <string>icons</string>
         <key>LSMinimumSystemVersion</key>
@@ -24,7 +22,7 @@
         <key>NSHighResolutionCapable</key>
         <string>true</string>
         <key>NSHumanReadableCopyright</key>
-        <string>© now, My Company</string>
+        <string>(c) 2025, Ethan Stovall</string>
         <key>NSAppTransportSecurity</key>
         <dict>
             <key>NSAllowsLocalNetworking</key>
