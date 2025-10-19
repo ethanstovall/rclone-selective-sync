@@ -13,5 +13,6 @@ bin/
 *.log
 *.env
 *.DS_Store
-# Ignore generated icon in root (copied from build/)
+# Ignore generated files in root (copied from build/)
 icon.ico
+wails.exe.manifest
