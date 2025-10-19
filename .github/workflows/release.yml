@@ -78,11 +78,21 @@ jobs:
       - name: Update version.txt
         run: echo "${{ needs.create-release.outputs.version }}" > version.txt
 
+      - name: Verify npm installation
+        run: |
+          npm --version
+          node --version
+
       - name: Build Windows Installer
         run: task windows:package
 
       - name: List bin directory
-        run: dir bin
+        run: |
+          if (Test-Path bin) {
+            dir bin
+          } else {
+            Write-Host "bin directory does not exist"
+          }
         if: always()
 
       - name: Upload Windows Installer
@@ -232,7 +242,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev build-essential pkg-config
+          # Try 4.1 first (Ubuntu 22.04+), fall back to 4.0 if needed
+          sudo apt-get install -y libgtk-3-dev build-essential pkg-config
+          sudo apt-get install -y libwebkit2gtk-4.1-dev || sudo apt-get install -y libwebkit2gtk-4.0-dev
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
@@ -253,7 +265,12 @@ jobs:
         run: task linux:package
 
       - name: List bin directory
-        run: ls -lah bin/
+        run: |
+          if [ -d bin ]; then
+            ls -lah bin/
+          else
+            echo "bin directory does not exist"
+          fi
         if: always()
 
       - name: Upload AppImage

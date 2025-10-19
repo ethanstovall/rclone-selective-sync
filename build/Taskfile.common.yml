@@ -24,7 +24,7 @@ tasks:
     generates:
       - node_modules/*
     preconditions:
-      - sh: npm version
+      - sh: '{{if eq OS "windows"}}where npm{{else}}which npm{{end}}'
         msg: "Looks like npm isn't installed. Npm is part of the Node installer: https://nodejs.org/en/download/"
     cmds:
       - npm install

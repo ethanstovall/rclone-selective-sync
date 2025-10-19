@@ -9,6 +9,8 @@
         <string>rclone-selective-sync.exe</string>
         <key>CFBundleIdentifier</key>
         <string>com.wails.rclone-selective-sync</string>
+        <key>CFBundleDisplayName</key>
+        <string>Rclone Selective Sync</string>
         <key>CFBundleVersion</key>
         <string>0.1.0</string>
         <key>CFBundleGetInfoString</key>
