@@ -50,6 +50,8 @@ tasks:
       - go.sum
     generates:
       - "frontend/bindings/**/*"
+    deps:
+      - task: generate:icons
     cmds:
       - wails3 generate bindings -f '{{.BUILD_FLAGS}}'{{if .UseTypescript}} -ts{{end}}
 
@@ -60,7 +62,7 @@ tasks:
       - "appicon.png"
     generates:
       - "icons.icns"
-      - "icons.ico"
+      - "icon.ico"
     cmds:
       - wails3 generate icons -input appicon.png
 
