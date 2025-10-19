@@ -11,7 +11,7 @@ vars:
   BIN_DIR: "bin"
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
   VERSION:
-    sh: '{{if eq OS "windows"}}powershell -Command "Get-Content version.txt -Raw"{{else}}cat version.txt{{end}}'
+    sh: '{{if eq OS "windows"}}powershell -Command "(Get-Content version.txt -Raw).Trim()"{{else}}cat version.txt | tr -d ''\n''{{end}}'
 
 tasks:
   build:
