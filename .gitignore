@@ -1,5 +1,3 @@
-# Ignore all but the TaskFile yamls, which dictate how to build the TS bindings.
-build/wails.exe.manifest
 # Ignore node_modules in the frontend directory
 frontend/node_modules/
 # Ignore bin
