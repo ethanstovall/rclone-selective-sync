@@ -33,7 +33,8 @@ tasks:
   generate:syso:
     summary: Generates Windows `.syso` file
     cmds:
-      - wails3 generate syso -arch {{.ARCH}} -icon ./build/icon.ico -manifest ./build/wails.exe.manifest -info ./build/info.json -out ./wails_windows_{{.ARCH}}.syso
+      - cmd: wails3 generate syso -arch {{.ARCH}} -icon icon.ico -manifest wails.exe.manifest -info info.json -out ../wails_windows_{{.ARCH}}.syso
+        dir: build
     vars:
       ARCH: '{{.ARCH | default ARCH}}'
 
