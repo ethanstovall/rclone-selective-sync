@@ -44,6 +44,8 @@ const BRANDING = {
   title: "Rclone Selective Sync",
   logo: false,
 }
+// This function prints "poop"
+
 
 function App() {
   // const [time, setTime] = useState<string>('Listening for Time event...');

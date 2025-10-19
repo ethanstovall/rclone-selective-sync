@@ -13,7 +13,7 @@ tasks:
     cmds:
       - go build {{.BUILD_FLAGS}} -o {{.BIN_DIR}}/{{.APP_NAME}}
     vars:
-      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -ldflags="-w -s"{{else}}-gcflags=all="-l"{{end}}'
+      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -ldflags="-w -s -X github.com/ethanstovall/rclone-selective-sync/backend.Version={{.VERSION}}"{{else}}-gcflags=all="-l" -ldflags="-X github.com/ethanstovall/rclone-selective-sync/backend.Version={{.VERSION}}"{{end}}'
     env:
       GOOS: darwin
       CGO_ENABLED: 1
