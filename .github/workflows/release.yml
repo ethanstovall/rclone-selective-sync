@@ -64,6 +64,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
 
@@ -75,6 +80,10 @@ jobs:
 
       - name: Build Windows Installer
         run: task windows:package
+
+      - name: List bin directory
+        run: dir bin
+        if: always()
 
       - name: Upload Windows Installer
         uses: actions/upload-release-asset@v1
@@ -116,12 +125,73 @@ jobs:
       - name: Build macOS Universal App Bundle
         run: task darwin:package:universal
 
-      - name: Create macOS ZIP
+      - name: Ad-hoc code sign (for non-App Store distribution)
         run: |
-          cd bin
-          zip -r rclone-selective-sync.app.zip rclone-selective-sync.app
+          # Remove quarantine attributes
+          xattr -cr bin/rclone-selective-sync.app
+          # Ad-hoc sign the app
+          codesign --force --deep --sign - bin/rclone-selective-sync.app
+          # Verify signature
+          codesign --verify --verbose bin/rclone-selective-sync.app
 
-      - name: Upload macOS App Bundle
+      - name: Create macOS DMG (better than ZIP for distribution)
+        run: |
+          # Create a temporary directory for the DMG
+          mkdir -p dmg-temp
+          cp -R bin/rclone-selective-sync.app dmg-temp/
+
+          # Create a symlink to Applications folder
+          ln -s /Applications dmg-temp/Applications
+
+          # Create the DMG
+          hdiutil create -volname "Rclone Selective Sync" \
+            -srcfolder dmg-temp \
+            -ov -format UDZO \
+            bin/rclone-selective-sync.dmg
+
+          # Also create a ZIP as backup
+          cd bin
+          zip -r -y rclone-selective-sync.app.zip rclone-selective-sync.app
+
+      - name: Create README for macOS users
+        run: |
+          cat > bin/MACOS_README.txt << 'EOF'
+          macOS Installation Instructions
+          ================================
+
+          Option 1: Using DMG (Recommended)
+          ----------------------------------
+          1. Download rclone-selective-sync.dmg
+          2. Open the DMG file
+          3. Drag the app to the Applications folder
+          4. Right-click (or Control-click) on the app in Applications
+          5. Select "Open" from the menu
+          6. Click "Open" in the security dialog
+
+          Option 2: Using Terminal (If right-click doesn't work)
+          -------------------------------------------------------
+          After installing, run this command in Terminal:
+
+          sudo xattr -cr /Applications/rclone-selective-sync.app
+
+          Then you can open it normally.
+
+          Why this is needed:
+          This app is not signed with an Apple Developer certificate ($99/year).
+          macOS Gatekeeper requires this extra step for unsigned apps.
+          EOF
+
+      - name: Upload macOS DMG
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./bin/rclone-selective-sync.dmg
+          asset_name: rclone-selective-sync.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload macOS ZIP (Alternative)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -130,6 +200,16 @@ jobs:
           asset_path: ./bin/rclone-selective-sync.app.zip
           asset_name: rclone-selective-sync.app.zip
           asset_content_type: application/zip
+
+      - name: Upload macOS README
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./bin/MACOS_README.txt
+          asset_name: MACOS_README.txt
+          asset_content_type: text/plain
 
   build-linux:
     name: Build Linux
@@ -152,7 +232,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev nsis
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev build-essential pkg-config
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
@@ -163,14 +243,18 @@ jobs:
       - name: Install nfpm
         run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
-          sudo apt update
-          sudo apt install nfpm
+          sudo apt-get update
+          sudo apt-get install -y nfpm
 
       - name: Update version.txt
         run: echo "${{ needs.create-release.outputs.version }}" > version.txt
 
       - name: Build Linux Packages
         run: task linux:package
+
+      - name: List bin directory
+        run: ls -lah bin/
+        if: always()
 
       - name: Upload AppImage
         uses: actions/upload-release-asset@v1
@@ -181,6 +265,7 @@ jobs:
           asset_path: ./bin/rclone-selective-sync-x86_64.AppImage
           asset_name: rclone-selective-sync-x86_64.AppImage
           asset_content_type: application/octet-stream
+        continue-on-error: true
 
       - name: Upload DEB Package
         uses: actions/upload-release-asset@v1
@@ -188,9 +273,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./bin/rclone-selective-sync_${{ needs.create-release.outputs.version }}_amd64.deb
+          asset_path: ./bin/rclone-selective-sync.exe_${{ needs.create-release.outputs.version }}_amd64.deb
           asset_name: rclone-selective-sync_${{ needs.create-release.outputs.version }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
+        continue-on-error: true
 
       - name: Upload RPM Package
         uses: actions/upload-release-asset@v1
@@ -198,6 +284,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./bin/rclone-selective-sync-${{ needs.create-release.outputs.version }}-1.x86_64.rpm
+          asset_path: ./bin/rclone-selective-sync.exe-${{ needs.create-release.outputs.version }}-1.x86_64.rpm
           asset_name: rclone-selective-sync-${{ needs.create-release.outputs.version }}-1.x86_64.rpm
           asset_content_type: application/x-rpm
+        continue-on-error: true
