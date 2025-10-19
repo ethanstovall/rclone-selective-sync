@@ -63,13 +63,8 @@ tasks:
     generates:
       - "icons.icns"
       - "icon.ico"
-      - "../icon.ico"
     cmds:
       - wails3 generate icons -input appicon.png
-      - cmd: powershell -Command "Copy-Item icon.ico ..\ -Force"
-        platforms: [windows]
-      - cmd: cp icon.ico ../
-        platforms: [linux, darwin]
 
   dev:frontend:
     summary: Runs the frontend in development mode

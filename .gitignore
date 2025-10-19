@@ -13,6 +13,5 @@ bin/
 *.log
 *.env
 *.DS_Store
-# Ignore generated files in root (copied from build/)
-icon.ico
-wails.exe.manifest
+# Ignore generated syso file in root
+*.syso
