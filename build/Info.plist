@@ -6,7 +6,7 @@
         <key>CFBundleName</key>
         <string>My Product</string>
         <key>CFBundleExecutable</key>
-        <string>rclone-selective-sync.exe</string>
+        <string>rclone-selective-sync</string>
         <key>CFBundleIdentifier</key>
         <string>com.wails.rclone-selective-sync</string>
         <key>CFBundleVersion</key>

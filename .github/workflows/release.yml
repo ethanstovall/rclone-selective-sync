@@ -273,7 +273,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./bin/rclone-selective-sync.exe_${{ needs.create-release.outputs.version }}_amd64.deb
+          asset_path: ./bin/rclone-selective-sync_${{ needs.create-release.outputs.version }}_amd64.deb
           asset_name: rclone-selective-sync_${{ needs.create-release.outputs.version }}_amd64.deb
           asset_content_type: application/vnd.debian.binary-package
         continue-on-error: true
@@ -284,7 +284,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./bin/rclone-selective-sync.exe-${{ needs.create-release.outputs.version }}-1.x86_64.rpm
+          asset_path: ./bin/rclone-selective-sync-${{ needs.create-release.outputs.version }}-1.x86_64.rpm
           asset_name: rclone-selective-sync-${{ needs.create-release.outputs.version }}-1.x86_64.rpm
           asset_content_type: application/x-rpm
         continue-on-error: true

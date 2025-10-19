@@ -3,7 +3,7 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "rclone-selective-sync.exe"
+name: "rclone-selective-sync"
 arch: ${GOARCH}
 platform: "linux"
 version: "{{.VERSION}}"
@@ -17,12 +17,12 @@ license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/rclone-selective-sync.exe"
-    dst: "/usr/local/bin/rclone-selective-sync.exe"
+  - src: "./bin/rclone-selective-sync"
+    dst: "/usr/local/bin/rclone-selective-sync"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/rclone-selective-sync.exe.png"
-  - src: "./build/rclone-selective-sync.exe.desktop"
-    dst: "/usr/share/applications/rclone-selective-sync.exe.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/rclone-selective-sync.png"
+  - src: "./build/rclone-selective-sync.desktop"
+    dst: "/usr/share/applications/rclone-selective-sync.desktop"
 
 depends:
   - gtk3
