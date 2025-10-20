@@ -14,3 +14,10 @@ func createCommand(name string, args ...string) *exec.Cmd {
 	fmt.Printf("[DEBUG] Executing: %s %s\n", name, strings.Join(args, " "))
 	return exec.Command(name, args...)
 }
+
+// createVisibleCommand creates an exec.Cmd (identical to createCommand on non-Windows platforms)
+func createVisibleCommand(name string, args ...string) *exec.Cmd {
+	// Debug logging to see what commands are being executed
+	fmt.Printf("[DEBUG] Executing (visible): %s %s\n", name, strings.Join(args, " "))
+	return exec.Command(name, args...)
+}

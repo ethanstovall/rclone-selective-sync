@@ -52,11 +52,11 @@ func (fs *FolderService) OpenFolder(targetFolder string) error {
 	// Open the folder based on the OS
 	switch runtime.GOOS {
 	case "windows":
-		return createCommand("explorer", fullLocalPath).Start()
+		return createVisibleCommand("explorer", fullLocalPath).Start()
 	case "darwin":
-		return createCommand("open", fullLocalPath).Start()
+		return createVisibleCommand("open", fullLocalPath).Start()
 	case "linux":
-		return createCommand("xdg-open", fullLocalPath).Start()
+		return createVisibleCommand("xdg-open", fullLocalPath).Start()
 	default:
 		return fmt.Errorf("unsupported platform")
 	}
