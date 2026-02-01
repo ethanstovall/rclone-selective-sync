@@ -63,8 +63,8 @@ func main() {
 	// 'URL' is the URL that will be loaded into the webview.
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            "Rclone Selective Sync",
-		Width:            1440,
-		Height:           810,
+		Width:            1920,
+		Height:           1080,
 		BackgroundColour: application.NewRGB(27, 38, 54),
 		URL:              "/",
 	})

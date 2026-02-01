@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Alert, Autocomplete, Checkbox, FormControlLabel, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Box, Checkbox, FormControlLabel, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
 import { CleaningServices, CloudUpload, CloudDownload, CreateNewFolderRounded, Refresh, FolderSpecial } from "@mui/icons-material";
 import GroupedFolderTree from "./GroupedFolderTree.tsx";
 import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
@@ -86,8 +86,8 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             setRcloneActionDialogOutput(null);
             setTargetFolders([]);
         }
-        // Reload the local folders after sync/download so the folder tree is updated
-        if (activeRcloneAction === RcloneAction.COPY_PULL || activeRcloneAction === RcloneAction.SYNC_PULL) {
+        // Reload the local folders and detect changes after any sync operation
+        if (activeRcloneAction === RcloneAction.COPY_PULL || activeRcloneAction === RcloneAction.SYNC_PULL || activeRcloneAction === RcloneAction.SYNC_PUSH) {
             const folders = await loadLocalFolders();
             if (folders) {
                 detectChangedFolders(folders);
@@ -228,17 +228,19 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                         padding={"10px"}
                         height={"14%"}
                     >
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={allChangedSelected && changedFolders.length > 0}
-                                    indeterminate={!allChangedSelected && targetFolders.some((f) => changedFolders.includes(f))}
-                                    onChange={handleSelectAllChanged}
-                                    disabled={changedFolders.length === 0 || isDetectingChanges}
-                                />
-                            }
-                            label={isDetectingChanges ? "Detecting..." : `Select changed (${changedFolders.length})`}
-                        />
+                        <Box sx={{ minWidth: 180, marginRight: 2 }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={allChangedSelected && changedFolders.length > 0}
+                                        indeterminate={!allChangedSelected && targetFolders.some((f) => changedFolders.includes(f))}
+                                        onChange={handleSelectAllChanged}
+                                        disabled={changedFolders.length === 0 || isDetectingChanges}
+                                    />
+                                }
+                                label={isDetectingChanges ? "Detecting..." : `Select Changed: ${changedFolders.length}`}
+                            />
+                        </Box>
                         <ActionIconButton
                             tooltip="Refresh - Detect Changed Folders"
                             color="primary"

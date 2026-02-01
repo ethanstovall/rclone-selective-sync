@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
+import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -14,28 +14,37 @@ import * as $models from "./models.js";
  * whether the changes are local or upstream. It's up to the user to be careful.
  * TODO: Flesh this check out, possibly using "rclone check", especially in cases where multiple users are working on the project at once.
  */
-export function DetectChangedFolders(localFolders: string[]): $CancellablePromise<string[]> {
-    return $Call.ByID(2751813025, localFolders).then(($result: any) => {
+export function DetectChangedFolders(localFolders: string[]): Promise<string[]> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(2751813025, localFolders) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * This function performs the full backup to the specified location for the configured remote.
  */
-export function ExecuteFullBackup(dry: boolean): $CancellablePromise<$models.RcloneActionOutput[]> {
-    return $Call.ByID(1373287177, dry).then(($result: any) => {
+export function ExecuteFullBackup(dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1373287177, dry) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType2($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * Error handling is done per request, and gracefully returned to the user for evaluation in the frontend.
  */
-export function ExecuteRcloneAction(targetFolders: string[], action: $models.RcloneAction, dry: boolean): $CancellablePromise<$models.RcloneActionOutput[]> {
-    return $Call.ByID(1430199943, targetFolders, action, dry).then(($result: any) => {
+export function ExecuteRcloneAction(targetFolders: string[], action: $models.RcloneAction, dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1430199943, targetFolders, action, dry) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType2($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 // Private type creation functions

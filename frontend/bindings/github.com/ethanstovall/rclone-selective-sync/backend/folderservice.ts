@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
+import {Call as $Call, Create as $Create} from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -13,34 +13,42 @@ import * as $models from "./models.js";
  * CreateGroup creates a new group in the project configuration.
  * Returns the updated ProjectConfig or an error if the group already exists.
  */
-export function CreateGroup(groupKey: string, groupConfig: $models.GroupConfig): $CancellablePromise<$models.ProjectConfig> {
-    return $Call.ByID(2527921271, groupKey, groupConfig).then(($result: any) => {
+export function CreateGroup(groupKey: string, groupConfig: $models.GroupConfig): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(2527921271, groupKey, groupConfig) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * Wrapper function for creating folders
  */
-export function CreateLocalFolders(targetFolders: string[]): $CancellablePromise<void> {
-    return $Call.ByID(1403706680, targetFolders);
+export function CreateLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1403706680, targetFolders) as any;
+    return $resultPromise;
 }
 
 /**
  * DeleteGroup removes a group from the project configuration.
  * Fails if the group contains folders or has child groups.
  */
-export function DeleteGroup(groupKey: string): $CancellablePromise<$models.ProjectConfig> {
-    return $Call.ByID(492689746, groupKey).then(($result: any) => {
+export function DeleteGroup(groupKey: string): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(492689746, groupKey) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * Wrapper function for deleting folders
  */
-export function DeleteLocalFolders(targetFolders: string[]): $CancellablePromise<void> {
-    return $Call.ByID(1155014579, targetFolders);
+export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1155014579, targetFolders) as any;
+    return $resultPromise;
 }
 
 /**
@@ -48,83 +56,106 @@ export function DeleteLocalFolders(targetFolders: string[]): $CancellablePromise
  * locally nor remotely. It only untracks it. Full deletions should be carefully handled manually with Rclone
  * for now.
  */
-export function DeregisterFolder(targetFolder: string): $CancellablePromise<$models.ProjectConfig> {
-    return $Call.ByID(1475157726, targetFolder).then(($result: any) => {
+export function DeregisterFolder(targetFolder: string): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1475157726, targetFolder) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * Given an existing folder, a new folder name, and a new FolderConfig, update the existing folder to match the new items.
  * Return the entire ProjectConfig after, which will contain the fully updated map of Folders.
  */
-export function EditFolder(currentFolderName: string, newFolderName: string, newFolderConfig: $models.FolderConfig): $CancellablePromise<$models.ProjectConfig> {
-    return $Call.ByID(1535184624, currentFolderName, newFolderName, newFolderConfig).then(($result: any) => {
+export function EditFolder(currentFolderName: string, newFolderName: string, newFolderConfig: $models.FolderConfig): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1535184624, currentFolderName, newFolderName, newFolderConfig) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * GetGroups returns all groups in the project configuration.
  */
-export function GetGroups(): $CancellablePromise<{ [_: string]: $models.GroupConfig }> {
-    return $Call.ByID(1582548756).then(($result: any) => {
+export function GetGroups(): Promise<{ [_: string]: $models.GroupConfig }> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1582548756) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType2($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * GetLocalFolders checks if the local paths for all folders in the ProjectConfig exist.
  * Returns a list of folder keys where the paths exist, or an error if something goes wrong.
  */
-export function GetLocalFolders(): $CancellablePromise<string[]> {
-    return $Call.ByID(1746980032).then(($result: any) => {
+export function GetLocalFolders(): Promise<string[]> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1746980032) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType3($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * Open the requested folder in the user's file explorer
  */
-export function OpenFolder(targetFolder: string): $CancellablePromise<void> {
-    return $Call.ByID(3234094764, targetFolder);
+export function OpenFolder(targetFolder: string): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(3234094764, targetFolder) as any;
+    return $resultPromise;
 }
 
 /**
  * OpenFolderPicker opens a native OS folder selection dialog and returns the selected path.
  * The returned path is relative to the project root. Returns an empty string if cancelled.
  */
-export function OpenFolderPicker(): $CancellablePromise<string> {
-    return $Call.ByID(1001267190);
+export function OpenFolderPicker(): Promise<string> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1001267190) as any;
+    return $resultPromise;
 }
 
 /**
  * Given a new folder name and a new FolderConfig, create a new FolderConfig for it in the ProjectConfig.
  * Return the entire ProjectConfig after, which will contain the fully updated map of Folders.
  */
-export function RegisterNewFolder(newFolderName: string, folderConfig: $models.FolderConfig): $CancellablePromise<$models.ProjectConfig> {
-    return $Call.ByID(1863241101, newFolderName, folderConfig).then(($result: any) => {
+export function RegisterNewFolder(newFolderName: string, folderConfig: $models.FolderConfig): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1863241101, newFolderName, folderConfig) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * RenameGroup changes a group's key while preserving all folder assignments.
  */
-export function RenameGroup(oldKey: string, newKey: string, newName: string): $CancellablePromise<$models.ProjectConfig> {
-    return $Call.ByID(2266715861, oldKey, newKey, newName).then(($result: any) => {
+export function RenameGroup(oldKey: string, newKey: string, newName: string): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(2266715861, oldKey, newKey, newName) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 /**
  * UpdateGroup updates an existing group's properties.
  * Returns the updated ProjectConfig or an error if the group doesn't exist.
  */
-export function UpdateGroup(groupKey: string, groupConfig: $models.GroupConfig): $CancellablePromise<$models.ProjectConfig> {
-    return $Call.ByID(4248014072, groupKey, groupConfig).then(($result: any) => {
+export function UpdateGroup(groupKey: string, groupConfig: $models.GroupConfig): Promise<$models.ProjectConfig> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(4248014072, groupKey, groupConfig) as any;
+    let $typingPromise = $resultPromise.then(($result) => {
         return $$createType0($result);
-    });
+    }) as any;
+    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
+    return $typingPromise;
 }
 
 // Private type creation functions
