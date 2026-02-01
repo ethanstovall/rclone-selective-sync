@@ -1,5 +1,5 @@
-import { Box, Grid2, TextField, Typography } from "@mui/material";
-import { FolderService, FolderConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
+import { Box, FormControl, Grid2, InputLabel, MenuItem, Select, SelectChangeEvent, TextField, Typography } from "@mui/material";
+import { FolderService, FolderConfig, GroupConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import ActionButton from "../common/ActionButton";
 import { Delete, EditRounded, OpenInNewRounded } from "@mui/icons-material";
 import React, { useEffect, useMemo, useState } from "react";
@@ -7,6 +7,34 @@ import ListItemPaper from "../common/ListItemPaper";
 import FolderDescription from "./FolderDescription";
 import StandardDialog from "../common/StandardDialog";
 import { useProjectConfig } from "../../hooks/ProjectConfigContext";
+
+// Helper to build a hierarchical label for nested groups
+function getGroupDisplayLabel(
+    groupKey: string,
+    groups: Record<string, GroupConfig>
+): string {
+    const group = groups[groupKey];
+    if (!group) return groupKey;
+
+    const parts: string[] = [group.name];
+    let current = group.parent_group;
+
+    while (current && groups[current]) {
+        parts.unshift(groups[current].name);
+        current = groups[current].parent_group;
+    }
+
+    return parts.join(" > ");
+}
+
+// Helper to get sorted group keys for display
+function getSortedGroupKeys(groups: Record<string, GroupConfig>): string[] {
+    return Object.keys(groups).sort((a, b) => {
+        const labelA = getGroupDisplayLabel(a, groups);
+        const labelB = getGroupDisplayLabel(b, groups);
+        return labelA.localeCompare(labelB);
+    });
+}
 
 interface FocusedFolderControls {
     focusedFolder: string | null;
@@ -26,6 +54,15 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
     // Project config state from context
     const { setProjectConfig } = useProjectConfig();
 
+    // Get available groups from project config
+    const availableGroups = useMemo(() => {
+        return projectConfig?.groups ?? {};
+    }, [projectConfig?.groups]);
+
+    const sortedGroupKeys = useMemo(() => {
+        return getSortedGroupKeys(availableGroups);
+    }, [availableGroups]);
+
     // Action state
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -43,6 +80,10 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
             [field]: value,
         });
         setEditedFolderConfig(updatedConfig);
+    };
+
+    const handleGroupChange = (event: SelectChangeEvent<string>) => {
+        handleInputChange("group", event.target.value);
     };
 
     const handleCloseEdit = () => {
@@ -107,7 +148,10 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
     }, [focusedFolder, projectConfig]);
 
     // The user can't save under the following conditions.
-    const canSaveEdit = useMemo(() => (editedFolderName !== ""), [editedFolderName]);
+    const canSaveEdit = useMemo(
+        () => editedFolderName.trim() !== "" && editedFolderConfig.group !== "",
+        [editedFolderName, editedFolderConfig.group]
+    );
 
     // Synchronize editDetails with details when details change
     useEffect(() => {
@@ -178,6 +222,22 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
                                 fullWidth
                                 margin="normal"
                             />
+                            <FormControl fullWidth margin="normal" required>
+                                <InputLabel id="edit-group-select-label">Group</InputLabel>
+                                <Select
+                                    labelId="edit-group-select-label"
+                                    id="edit-group-select"
+                                    value={editedFolderConfig.group || ""}
+                                    label="Group"
+                                    onChange={handleGroupChange}
+                                >
+                                    {sortedGroupKeys.map((groupKey) => (
+                                        <MenuItem key={groupKey} value={groupKey}>
+                                            {getGroupDisplayLabel(groupKey, availableGroups)}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
                             <TextField
                                 label="Description"
                                 value={editedFolderConfig.description}

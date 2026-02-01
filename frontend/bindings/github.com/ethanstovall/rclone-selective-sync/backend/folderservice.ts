@@ -10,10 +10,30 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as $models from "./models.js";
 
 /**
+ * CreateGroup creates a new group in the project configuration.
+ * Returns the updated ProjectConfig or an error if the group already exists.
+ */
+export function CreateGroup(groupKey: string, groupConfig: $models.GroupConfig): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(2527921271, groupKey, groupConfig).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
  * Wrapper function for creating folders
  */
 export function CreateLocalFolders(targetFolders: string[]): $CancellablePromise<void> {
     return $Call.ByID(1403706680, targetFolders);
+}
+
+/**
+ * DeleteGroup removes a group from the project configuration.
+ * Fails if the group contains folders or has child groups.
+ */
+export function DeleteGroup(groupKey: string): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(492689746, groupKey).then(($result: any) => {
+        return $$createType0($result);
+    });
 }
 
 /**
@@ -45,12 +65,21 @@ export function EditFolder(currentFolderName: string, newFolderName: string, new
 }
 
 /**
+ * GetGroups returns all groups in the project configuration.
+ */
+export function GetGroups(): $CancellablePromise<{ [_: string]: $models.GroupConfig }> {
+    return $Call.ByID(1582548756).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
+/**
  * GetLocalFolders checks if the local paths for all folders in the ProjectConfig exist.
  * Returns a list of folder keys where the paths exist, or an error if something goes wrong.
  */
 export function GetLocalFolders(): $CancellablePromise<string[]> {
     return $Call.ByID(1746980032).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType3($result);
     });
 }
 
@@ -79,6 +108,27 @@ export function RegisterNewFolder(newFolderName: string, folderConfig: $models.F
     });
 }
 
+/**
+ * RenameGroup changes a group's key while preserving all folder assignments.
+ */
+export function RenameGroup(oldKey: string, newKey: string, newName: string): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(2266715861, oldKey, newKey, newName).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
+/**
+ * UpdateGroup updates an existing group's properties.
+ * Returns the updated ProjectConfig or an error if the group doesn't exist.
+ */
+export function UpdateGroup(groupKey: string, groupConfig: $models.GroupConfig): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(4248014072, groupKey, groupConfig).then(($result: any) => {
+        return $$createType0($result);
+    });
+}
+
 // Private type creation functions
 const $$createType0 = $models.ProjectConfig.createFrom;
-const $$createType1 = $Create.Array($Create.Any);
+const $$createType1 = $models.GroupConfig.createFrom;
+const $$createType2 = $Create.Map($Create.Any, $$createType1);
+const $$createType3 = $Create.Array($Create.Any);

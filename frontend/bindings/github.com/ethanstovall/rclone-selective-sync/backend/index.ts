@@ -13,6 +13,7 @@ export {
 export {
     FolderConfig,
     GlobalConfig,
+    GroupConfig,
     ProjectConfig,
     RcloneAction,
     RcloneActionOutput,

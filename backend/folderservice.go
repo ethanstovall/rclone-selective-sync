@@ -196,6 +196,19 @@ func (fs *FolderService) RegisterNewFolder(newFolderName string, folderConfig Fo
 		return *projectConfig, fmt.Errorf("folder path does not exist: %s", fullLocalPath)
 	}
 
+	// Validate that a group is specified
+	if folderConfig.Group == "" {
+		return *projectConfig, fmt.Errorf("a group must be specified for the folder")
+	}
+
+	// Validate that the specified group exists
+	if projectConfig.Groups == nil {
+		return *projectConfig, fmt.Errorf("no groups exist; create a group first before registering folders")
+	}
+	if _, groupExists := projectConfig.Groups[folderConfig.Group]; !groupExists {
+		return *projectConfig, fmt.Errorf("group '%s' does not exist", folderConfig.Group)
+	}
+
 	// Add the new key-value pair to the projectConfig
 	projectConfig.Folders[newFolderName] = folderConfig
 
@@ -219,6 +232,19 @@ func (fs *FolderService) EditFolder(currentFolderName string, newFolderName stri
 	// Verify that the given folder to update exists in the configuration.
 	if _, exists := projectConfig.Folders[currentFolderName]; !exists {
 		return *projectConfig, fmt.Errorf("folder '%s' does not exist in the project configuration", currentFolderName)
+	}
+
+	// Validate that a group is specified
+	if newFolderConfig.Group == "" {
+		return *projectConfig, fmt.Errorf("a group must be specified for the folder")
+	}
+
+	// Validate that the specified group exists
+	if projectConfig.Groups == nil {
+		return *projectConfig, fmt.Errorf("no groups exist; create a group first")
+	}
+	if _, groupExists := projectConfig.Groups[newFolderConfig.Group]; !groupExists {
+		return *projectConfig, fmt.Errorf("group '%s' does not exist", newFolderConfig.Group)
 	}
 
 	if currentFolderName == newFolderName {
@@ -362,4 +388,215 @@ func (fs *FolderService) OpenFolderPicker() (string, error) {
 	relativePath = strings.TrimPrefix(relativePath, "/")
 
 	return relativePath, nil
+}
+
+// ==================== Group Management Methods ====================
+
+// CreateGroup creates a new group in the project configuration.
+// Returns the updated ProjectConfig or an error if the group already exists.
+func (fs *FolderService) CreateGroup(groupKey string, groupConfig GroupConfig) (ProjectConfig, error) {
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return ProjectConfig{}, err
+	}
+
+	// Ensure groups map is initialized
+	if projectConfig.Groups == nil {
+		projectConfig.Groups = make(map[string]GroupConfig)
+	}
+
+	// Check if group already exists
+	if _, exists := projectConfig.Groups[groupKey]; exists {
+		return *projectConfig, fmt.Errorf("a group with the key '%s' already exists", groupKey)
+	}
+
+	// Validate parent group if specified
+	if groupConfig.ParentGroup != "" {
+		if _, parentExists := projectConfig.Groups[groupConfig.ParentGroup]; !parentExists {
+			return *projectConfig, fmt.Errorf("parent group '%s' does not exist", groupConfig.ParentGroup)
+		}
+		// Check for circular reference (parent can't be self)
+		if groupConfig.ParentGroup == groupKey {
+			return *projectConfig, fmt.Errorf("group cannot be its own parent")
+		}
+	}
+
+	// Add the new group
+	projectConfig.Groups[groupKey] = groupConfig
+
+	// Save and sync
+	if err := fs.saveAndSyncConfig(projectConfig); err != nil {
+		return *projectConfig, err
+	}
+
+	return *projectConfig, nil
+}
+
+// UpdateGroup updates an existing group's properties.
+// Returns the updated ProjectConfig or an error if the group doesn't exist.
+func (fs *FolderService) UpdateGroup(groupKey string, groupConfig GroupConfig) (ProjectConfig, error) {
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return ProjectConfig{}, err
+	}
+
+	// Check if group exists
+	if _, exists := projectConfig.Groups[groupKey]; !exists {
+		return *projectConfig, fmt.Errorf("group '%s' does not exist", groupKey)
+	}
+
+	// Validate parent group if specified
+	if groupConfig.ParentGroup != "" {
+		if _, parentExists := projectConfig.Groups[groupConfig.ParentGroup]; !parentExists {
+			return *projectConfig, fmt.Errorf("parent group '%s' does not exist", groupConfig.ParentGroup)
+		}
+		// Check for circular reference
+		if groupConfig.ParentGroup == groupKey {
+			return *projectConfig, fmt.Errorf("group cannot be its own parent")
+		}
+		// Check for deeper circular references
+		if fs.wouldCreateCircularReference(projectConfig, groupKey, groupConfig.ParentGroup) {
+			return *projectConfig, fmt.Errorf("this would create a circular group reference")
+		}
+	}
+
+	// Update the group
+	projectConfig.Groups[groupKey] = groupConfig
+
+	// Save and sync
+	if err := fs.saveAndSyncConfig(projectConfig); err != nil {
+		return *projectConfig, err
+	}
+
+	return *projectConfig, nil
+}
+
+// DeleteGroup removes a group from the project configuration.
+// Fails if the group contains folders or has child groups.
+func (fs *FolderService) DeleteGroup(groupKey string) (ProjectConfig, error) {
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return ProjectConfig{}, err
+	}
+
+	// Check if group exists
+	if _, exists := projectConfig.Groups[groupKey]; !exists {
+		return *projectConfig, fmt.Errorf("group '%s' does not exist", groupKey)
+	}
+
+	// Check if any folders are in this group
+	for folderName, folder := range projectConfig.Folders {
+		if folder.Group == groupKey {
+			return *projectConfig, fmt.Errorf("cannot delete group '%s': folder '%s' is assigned to it. Move the folder to another group first", groupKey, folderName)
+		}
+	}
+
+	// Check if any groups have this as parent
+	for childKey, childGroup := range projectConfig.Groups {
+		if childGroup.ParentGroup == groupKey {
+			return *projectConfig, fmt.Errorf("cannot delete group '%s': group '%s' is a child of it. Delete or move child groups first", groupKey, childKey)
+		}
+	}
+
+	// Delete the group
+	delete(projectConfig.Groups, groupKey)
+
+	// Save and sync
+	if err := fs.saveAndSyncConfig(projectConfig); err != nil {
+		return *projectConfig, err
+	}
+
+	return *projectConfig, nil
+}
+
+// RenameGroup changes a group's key while preserving all folder assignments.
+func (fs *FolderService) RenameGroup(oldKey string, newKey string, newName string) (ProjectConfig, error) {
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return ProjectConfig{}, err
+	}
+
+	// Check if old group exists
+	oldGroup, exists := projectConfig.Groups[oldKey]
+	if !exists {
+		return *projectConfig, fmt.Errorf("group '%s' does not exist", oldKey)
+	}
+
+	// Check if new key already exists (and isn't the same as old)
+	if oldKey != newKey {
+		if _, exists := projectConfig.Groups[newKey]; exists {
+			return *projectConfig, fmt.Errorf("a group with the key '%s' already exists", newKey)
+		}
+	}
+
+	// Update all folders that reference the old group key
+	for folderName, folder := range projectConfig.Folders {
+		if folder.Group == oldKey {
+			folder.Group = newKey
+			projectConfig.Folders[folderName] = folder
+		}
+	}
+
+	// Update all child groups that have this as parent
+	for childKey, childGroup := range projectConfig.Groups {
+		if childGroup.ParentGroup == oldKey {
+			childGroup.ParentGroup = newKey
+			projectConfig.Groups[childKey] = childGroup
+		}
+	}
+
+	// Create new group entry with updated name
+	newGroup := oldGroup
+	newGroup.Name = newName
+
+	// Delete old and add new
+	delete(projectConfig.Groups, oldKey)
+	projectConfig.Groups[newKey] = newGroup
+
+	// Save and sync
+	if err := fs.saveAndSyncConfig(projectConfig); err != nil {
+		return *projectConfig, err
+	}
+
+	return *projectConfig, nil
+}
+
+// GetGroups returns all groups in the project configuration.
+func (fs *FolderService) GetGroups() (map[string]GroupConfig, error) {
+	projectConfig, err := fs.getProjectConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if projectConfig.Groups == nil {
+		return make(map[string]GroupConfig), nil
+	}
+
+	return projectConfig.Groups, nil
+}
+
+// wouldCreateCircularReference checks if setting parentKey as the parent of groupKey
+// would create a circular reference in the group hierarchy.
+func (fs *FolderService) wouldCreateCircularReference(config *ProjectConfig, groupKey, parentKey string) bool {
+	visited := make(map[string]bool)
+	current := parentKey
+
+	for current != "" {
+		if current == groupKey {
+			return true
+		}
+		if visited[current] {
+			// Already in a cycle (shouldn't happen with valid data)
+			return true
+		}
+		visited[current] = true
+
+		if group, exists := config.Groups[current]; exists {
+			current = group.ParentGroup
+		} else {
+			break
+		}
+	}
+
+	return false
 }

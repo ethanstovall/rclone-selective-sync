@@ -82,6 +82,13 @@ func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 			if loadErr != nil {
 				return *defaultConfig, fmt.Errorf("failed to load pulled config: %v", loadErr)
 			}
+			// Migrate to groups format if needed
+			if loadedConfig.MigrateToGroups() {
+				fmt.Println("Migrated config to groups format")
+				if saveErr := saveConfig(configFile, loadedConfig); saveErr != nil {
+					fmt.Printf("Warning: Failed to save migrated config: %v\n", saveErr)
+				}
+			}
 			cs.configManager.SetProjectConfig(loadedConfig)
 		}
 	} else {
@@ -135,6 +142,13 @@ func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 		loadedConfig, loadErr := loadConfig[ProjectConfig](configFile)
 		if loadErr != nil {
 			err = loadErr
+		}
+		// Migrate to groups format if needed
+		if loadedConfig.MigrateToGroups() {
+			fmt.Println("Migrated config to groups format")
+			if saveErr := saveConfig(configFile, loadedConfig); saveErr != nil {
+				fmt.Printf("Warning: Failed to save migrated config: %v\n", saveErr)
+			}
 		}
 		fmt.Println("Loaded sync.json from:", configFile)
 		cs.configManager.SetProjectConfig(loadedConfig)
@@ -324,6 +338,14 @@ func (cs *ConfigService) RefreshSyncFile() (ProjectConfig, error) {
 	loadedConfig, loadErr := loadConfig[ProjectConfig](configFile)
 	if loadErr != nil {
 		return *defaultConfig, fmt.Errorf("failed to load refreshed config: %v", loadErr)
+	}
+
+	// Migrate to groups format if needed
+	if loadedConfig.MigrateToGroups() {
+		fmt.Println("Migrated config to groups format")
+		if saveErr := saveConfig(configFile, loadedConfig); saveErr != nil {
+			fmt.Printf("Warning: Failed to save migrated config: %v\n", saveErr)
+		}
 	}
 
 	// Update the config manager with the new config

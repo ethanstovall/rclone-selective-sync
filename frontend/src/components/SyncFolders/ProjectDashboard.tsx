@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
-import { Autocomplete, FormControlLabel, Grid2, Paper, Switch, TextField, Typography } from "@mui/material";
-import { CleaningServices, CloudUpload, CloudDownload, Download, CreateNewFolderRounded, Checklist } from "@mui/icons-material";
-import FolderTree from "./FolderTree.tsx";
+import { Alert, Autocomplete, Checkbox, FormControlLabel, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
+import { CleaningServices, CloudUpload, CloudDownload, CreateNewFolderRounded, Refresh, FolderSpecial } from "@mui/icons-material";
+import GroupedFolderTree from "./GroupedFolderTree.tsx";
 import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
 import RcloneActionDialog from "./RcloneActionDialog.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
@@ -12,6 +12,7 @@ import { FolderService, SyncService } from "../../../bindings/github.com/ethanst
 import StandardDialog from "../common/StandardDialog.tsx";
 import FocusedFolderControls from "./FocusedFolderControls.tsx";
 import NewFolderDialog from "./NewFolderDialog.tsx";
+import ManageGroupsDialog from "./ManageGroupsDialog.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
     // State for project list filtering
@@ -31,6 +32,9 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // State for new folder registration
     const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState<boolean>(false)
 
+    // State for group management
+    const [isManageGroupsDialogOpen, setIsManageGroupsDialogOpen] = useState<boolean>(false)
+
     // State for the folder description
     const [focusedFolder, setFocusedFolder] = useState<string | null>(null);
 
@@ -39,8 +43,12 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     const [isLoadingLocalFolders, setIsLoadingLocalFolders] = useState<boolean>(true);
     const [isDetectingChanges, setIsDetectingChanges] = useState<boolean>(false);
 
-    // State for whether to show local or nonlocal folders
-    const [isShowLocal, setIsShowLocal] = useState<boolean>(true);
+    // State for folders that have pending changes
+    const [changedFolders, setChangedFolders] = useState<string[]>([]);
+
+    // State for async folder downloads
+    const [downloadingFolders, setDownloadingFolders] = useState<string[]>([]);
+    const [downloadError, setDownloadError] = useState<{ folder: string; message: string } | null>(null);
 
     const areActionButtonsDisabled = useMemo(() => {
         return targetFolders.length === 0;
@@ -78,9 +86,12 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             setRcloneActionDialogOutput(null);
             setTargetFolders([]);
         }
-        if (!isShowLocal && activeRcloneAction === RcloneAction.COPY_PULL) {
-            // Reload the local folders afer this action so that the folder tree is appropriately updated
-            loadLocalFolders();
+        // Reload the local folders after sync/download so the folder tree is updated
+        if (activeRcloneAction === RcloneAction.COPY_PULL || activeRcloneAction === RcloneAction.SYNC_PULL) {
+            const folders = await loadLocalFolders();
+            if (folders) {
+                detectChangedFolders(folders);
+            }
         }
     }
 
@@ -115,23 +126,86 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         }
     }
 
-    const markChangedFolders = async () => {
-        const localFolders = await loadLocalFolders();
+    // Detect and store which folders have changes
+    const detectChangedFolders = useCallback(async (folders: string[]) => {
         try {
             setIsDetectingChanges(true);
-            const changedFolders = await SyncService.DetectChangedFolders(localFolders ?? []);
-            setTargetFolders(changedFolders);
+            const detected = await SyncService.DetectChangedFolders(folders);
+            setChangedFolders(detected);
+            return detected;
         } catch (error: any) {
             console.error(`Error detecting changes in local folders:`, error);
+            return [];
         } finally {
             setIsDetectingChanges(false);
         }
-    }
+    }, []);
+
+    // Check if all changed folders are currently selected
+    const allChangedSelected = useMemo(() => {
+        if (changedFolders.length === 0) return false;
+        return changedFolders.every((folder) => targetFolders.includes(folder));
+    }, [changedFolders, targetFolders]);
+
+    // Handle "Select all changed" checkbox toggle
+    const handleSelectAllChanged = useCallback(() => {
+        if (allChangedSelected) {
+            // Deselect all changed folders
+            setTargetFolders(targetFolders.filter((f) => !changedFolders.includes(f)));
+        } else {
+            // Select all changed folders (add any not already selected)
+            const newSelection = [...targetFolders];
+            changedFolders.forEach((f) => {
+                if (!newSelection.includes(f)) {
+                    newSelection.push(f);
+                }
+            });
+            setTargetFolders(newSelection);
+        }
+    }, [allChangedSelected, changedFolders, targetFolders]);
+
+    // Handle async download of a single non-local folder
+    const handleDownloadFolder = useCallback(async (folderKey: string) => {
+        // Add to downloading list
+        setDownloadingFolders((prev) => [...prev, folderKey]);
+        setDownloadError(null);
+
+        try {
+            // Execute download (COPY_PULL) for this single folder without dry run
+            const output = await ExecuteRcloneAction([folderKey], RcloneAction.COPY_PULL, false);
+
+            // Check if there was an error
+            const folderOutput = output.find((o) => o.target_folder === folderKey);
+            if (folderOutput?.command_error) {
+                setDownloadError({
+                    folder: folderKey,
+                    message: folderOutput.command_error,
+                });
+            } else {
+                // Refresh local folders list after successful download
+                await loadLocalFolders();
+            }
+        } catch (error: any) {
+            setDownloadError({
+                folder: folderKey,
+                message: error.message || "Download failed",
+            });
+        } finally {
+            // Remove from downloading list
+            setDownloadingFolders((prev) => prev.filter((f) => f !== folderKey));
+        }
+    }, []);
 
     useEffect(() => {
-        // Recalculate the folders the user has locally each time the project configuration changes.
-        loadLocalFolders();
-    }, [projectConfig]);
+        // Recalculate the folders the user has locally and detect changes
+        const loadAndDetect = async () => {
+            const folders = await loadLocalFolders();
+            if (folders) {
+                detectChangedFolders(folders);
+            }
+        };
+        loadAndDetect();
+    }, [projectConfig, detectChangedFolders]);
 
     return (
         (projectConfig.folders) ? (
@@ -147,29 +221,46 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                         padding={"10px"}
                         height={"14%"}
                     >
-                        <FormControlLabel control={<Switch checked={isShowLocal} onChange={() => { setIsShowLocal((prev) => (!prev)); setTargetFolders([]); }} />} label="Local" />
-                        {
-                            (isShowLocal) &&
-                            <ActionIconButton
-                                tooltip="Select All Changed"
-                                color="primary"
-                                disabled={false}
-                                loading={isLoadingLocalFolders || isDetectingChanges}
-                                inputIcon={Checklist}
-                                onClick={markChangedFolders}
-                            />
-                        }
-                        {
-                            (isShowLocal) &&
-                            <ActionIconButton
-                                tooltip="Register New"
-                                color="primary"
-                                disabled={false}
-                                loading={false}
-                                inputIcon={CreateNewFolderRounded}
-                                onClick={() => setIsNewFolderDialogOpen(true)}
-                            />
-                        }
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={allChangedSelected && changedFolders.length > 0}
+                                    indeterminate={!allChangedSelected && targetFolders.some((f) => changedFolders.includes(f))}
+                                    onChange={handleSelectAllChanged}
+                                    disabled={changedFolders.length === 0 || isDetectingChanges}
+                                />
+                            }
+                            label={isDetectingChanges ? "Detecting..." : `Select changed (${changedFolders.length})`}
+                        />
+                        <ActionIconButton
+                            tooltip="Refresh - Detect Changed Folders"
+                            color="primary"
+                            disabled={isLoadingLocalFolders || isDetectingChanges}
+                            loading={isDetectingChanges}
+                            inputIcon={Refresh}
+                            onClick={async () => {
+                                const folders = await loadLocalFolders();
+                                if (folders) {
+                                    detectChangedFolders(folders);
+                                }
+                            }}
+                        />
+                        <ActionIconButton
+                            tooltip="Manage Groups"
+                            color="primary"
+                            disabled={false}
+                            loading={false}
+                            inputIcon={FolderSpecial}
+                            onClick={() => setIsManageGroupsDialogOpen(true)}
+                        />
+                        <ActionIconButton
+                            tooltip="Register New Folder"
+                            color="primary"
+                            disabled={false}
+                            loading={false}
+                            inputIcon={CreateNewFolderRounded}
+                            onClick={() => setIsNewFolderDialogOpen(true)}
+                        />
                         <Autocomplete
                             freeSolo
                             options={Object.keys(projectConfig.folders).sort()}
@@ -178,39 +269,37 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             renderInput={(params) => <TextField {...params} label="Search Folders" variant="outlined" fullWidth />}
                             sx={{ width: "100%" }}
                         />
-                        {
-                            (isShowLocal) &&
-                            <ActionIconButton
-                                tooltip="Remove Local"
-                                color="primary"
-                                disabled={areActionButtonsDisabled}
-                                loading={isDeletingLocal}
-                                inputIcon={CleaningServices}
-                                onClick={() => setIsDeleteDialogOpen(true)}
-                            />
-                        }
-                        {
-                            (isShowLocal) &&
-                            <ActionIconButton
-                                tooltip="Push to Remote"
-                                color="primary"
-                                disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
-                                loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PUSH}
-                                inputIcon={CloudUpload}
-                                onClick={() => { handleRcloneAction(RcloneAction.SYNC_PUSH, true) }}
-                            />
-                        }
                         <ActionIconButton
-                            tooltip={(isShowLocal) ? "Update from Remote" : "Download"}
+                            tooltip="Remove Local"
                             color="primary"
-                            disabled={areActionButtonsDisabled} // TODO: Disable for folder selections that are invalid
+                            disabled={areActionButtonsDisabled}
+                            loading={isDeletingLocal}
+                            inputIcon={CleaningServices}
+                            onClick={() => setIsDeleteDialogOpen(true)}
+                        />
+                        <ActionIconButton
+                            tooltip="Push to Remote"
+                            color="primary"
+                            disabled={areActionButtonsDisabled}
+                            loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PUSH}
+                            inputIcon={CloudUpload}
+                            onClick={() => { handleRcloneAction(RcloneAction.SYNC_PUSH, true) }}
+                        />
+                        <ActionIconButton
+                            tooltip="Pull from Remote"
+                            color="primary"
+                            disabled={areActionButtonsDisabled}
                             loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PULL}
-                            inputIcon={(isShowLocal) ? CloudDownload : Download}
-                            onClick={() => { handleRcloneAction((isShowLocal) ? RcloneAction.SYNC_PULL : RcloneAction.COPY_PULL, true) }}
+                            inputIcon={CloudDownload}
+                            onClick={() => { handleRcloneAction(RcloneAction.SYNC_PULL, true) }}
                         />
                         <NewFolderDialog
                             isOpen={isNewFolderDialogOpen}
                             setIsOpen={setIsNewFolderDialogOpen}
+                        />
+                        <ManageGroupsDialog
+                            isOpen={isManageGroupsDialogOpen}
+                            setIsOpen={setIsManageGroupsDialogOpen}
                         />
                         <StandardDialog
                             title="Delete Selected Folders?"
@@ -224,16 +313,19 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                         </StandardDialog>
                     </Grid2>
                     <Grid2 size={12} height={"86%"} display={"table"}>
-                        <FolderTree
-                            isShowLocal={isShowLocal}
+                        <GroupedFolderTree
                             projectConfig={projectConfig}
                             localFolders={localFolders}
+                            changedFolders={changedFolders}
+                            downloadingFolders={downloadingFolders}
                             isLoadingLocalFolders={isLoadingLocalFolders}
                             searchTerm={searchTerm}
                             targetFolders={targetFolders}
                             focusedFolder={focusedFolder}
                             setFocusedFolder={setFocusedFolder}
-                            setTargetFolders={setTargetFolders} />
+                            setTargetFolders={setTargetFolders}
+                            onDownloadFolder={handleDownloadFolder}
+                        />
                         <RcloneActionDialog
                             action={activeRcloneAction}
                             rcloneDryOutput={rcloneActionDialogOutput}
@@ -252,6 +344,22 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                         setFocusedFolder={setFocusedFolder}
                     />
                 </Grid2>
+
+                {/* Download error snackbar */}
+                <Snackbar
+                    open={downloadError !== null}
+                    autoHideDuration={6000}
+                    onClose={() => setDownloadError(null)}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                >
+                    <Alert
+                        onClose={() => setDownloadError(null)}
+                        severity="error"
+                        variant="filled"
+                    >
+                        Failed to download "{downloadError?.folder}": {downloadError?.message}
+                    </Alert>
+                </Snackbar>
             </Grid2>
 
         ) : (

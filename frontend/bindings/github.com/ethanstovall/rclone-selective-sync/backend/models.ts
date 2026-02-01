@@ -10,6 +10,11 @@ export class FolderConfig {
     "local_path": string;
     "description": string;
 
+    /**
+     * Group key (required for new folders)
+     */
+    "group": string;
+
     /** Creates a new FolderConfig instance. */
     constructor($$source: Partial<FolderConfig> = {}) {
         if (!("remote_path" in $$source)) {
@@ -20,6 +25,9 @@ export class FolderConfig {
         }
         if (!("description" in $$source)) {
             this["description"] = "";
+        }
+        if (!("group" in $$source)) {
+            this["group"] = "";
         }
 
         Object.assign(this, $$source);
@@ -63,9 +71,53 @@ export class GlobalConfig {
     }
 }
 
+/**
+ * GroupConfig defines a folder group for organizing folders in the UI
+ */
+export class GroupConfig {
+    /**
+     * Display name
+     */
+    "name": string;
+
+    /**
+     * Empty = top-level, otherwise = nested under parent
+     */
+    "parent_group": string;
+
+    /**
+     * For manual ordering (future)
+     */
+    "sort_order": number;
+
+    /** Creates a new GroupConfig instance. */
+    constructor($$source: Partial<GroupConfig> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("parent_group" in $$source)) {
+            this["parent_group"] = "";
+        }
+        if (!("sort_order" in $$source)) {
+            this["sort_order"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new GroupConfig instance from a string or object.
+     */
+    static createFrom($$source: any = {}): GroupConfig {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new GroupConfig($$parsedSource as Partial<GroupConfig>);
+    }
+}
+
 export class ProjectConfig {
     "allow_global_sync": boolean;
     "folders": { [_: string]: FolderConfig };
+    "groups": { [_: string]: GroupConfig };
 
     /** Creates a new ProjectConfig instance. */
     constructor($$source: Partial<ProjectConfig> = {}) {
@@ -74,6 +126,9 @@ export class ProjectConfig {
         }
         if (!("folders" in $$source)) {
             this["folders"] = {};
+        }
+        if (!("groups" in $$source)) {
+            this["groups"] = {};
         }
 
         Object.assign(this, $$source);
@@ -84,9 +139,13 @@ export class ProjectConfig {
      */
     static createFrom($$source: any = {}): ProjectConfig {
         const $$createField1_0 = $$createType3;
+        const $$createField2_0 = $$createType5;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("folders" in $$parsedSource) {
             $$parsedSource["folders"] = $$createField1_0($$parsedSource["folders"]);
+        }
+        if ("groups" in $$parsedSource) {
+            $$parsedSource["groups"] = $$createField2_0($$parsedSource["groups"]);
         }
         return new ProjectConfig($$parsedSource as Partial<ProjectConfig>);
     }
@@ -182,3 +241,5 @@ const $$createType0 = RemoteConfig.createFrom;
 const $$createType1 = $Create.Map($Create.Any, $$createType0);
 const $$createType2 = FolderConfig.createFrom;
 const $$createType3 = $Create.Map($Create.Any, $$createType2);
+const $$createType4 = GroupConfig.createFrom;
+const $$createType5 = $Create.Map($Create.Any, $$createType4);
