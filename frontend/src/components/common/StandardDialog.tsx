@@ -29,11 +29,10 @@ const StandardDialog: React.FunctionComponent<StandardDialogProps> = ({
             open={isOpen}
             onClose={handleClose}
             scroll={"paper"}
-            maxWidth={false}
+            maxWidth="sm"
             fullWidth={true}
             aria-labelledby="standard-dialog-title"
             aria-describedby="standarddialog-description"
-            sx={{ width: "50vw", justifySelf: "center" }}
         >
             <DialogTitle id="standard-dialog-title">{title}</DialogTitle>
             <DialogContent dividers>

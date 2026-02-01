@@ -52,6 +52,7 @@ interface GroupedFolderTreeProps {
     changedFolders: string[];
     downloadingFolders: string[];
     isLoadingLocalFolders: boolean;
+    isDetectingChanges: boolean;
     searchTerm: string;
     targetFolders: string[];
     focusedFolder: string | null;
@@ -157,13 +158,24 @@ function filterTree(
 const FolderStatus: React.FC<{
     isLocal: boolean;
     isChanged: boolean;
-}> = ({ isLocal, isChanged }) => {
+    isChecking: boolean;
+}> = ({ isLocal, isChanged, isChecking }) => {
     if (!isLocal) {
         return (
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <RadioButtonUnchecked sx={{ fontSize: 14, color: "text.disabled" }} />
                 <Typography variant="caption" color="text.disabled">
                     Not local
+                </Typography>
+            </Box>
+        );
+    }
+    if (isChecking) {
+        return (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <CircularProgress size={14} />
+                <Typography variant="caption" color="text.secondary">
+                    Checking...
                 </Typography>
             </Box>
         );
@@ -194,6 +206,7 @@ const FolderItem: React.FC<{
     folderConfig: FolderConfig;
     isLocal: boolean;
     isChanged: boolean;
+    isChecking: boolean;
     isChecked: boolean;
     isFocused: boolean;
     isDownloading: boolean;
@@ -205,6 +218,7 @@ const FolderItem: React.FC<{
     folderKey,
     isLocal,
     isChanged,
+    isChecking,
     isChecked,
     isFocused,
     isDownloading,
@@ -264,7 +278,7 @@ const FolderItem: React.FC<{
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, mr: 1 }}>
                     {/* Status indicator - fixed width for alignment */}
                     <Box sx={{ minWidth: 80 }}>
-                        <FolderStatus isLocal={isLocal} isChanged={isChanged} />
+                        <FolderStatus isLocal={isLocal} isChanged={isChanged} isChecking={isChecking} />
                     </Box>
                     {/* Open folder button for local folders */}
                     {isLocal && (
@@ -345,6 +359,7 @@ const GroupTreeNode: React.FC<{
     localFolders: string[];
     changedFolders: string[];
     downloadingFolders: string[];
+    isDetectingChanges: boolean;
     targetFolders: string[];
     focusedFolder: string | null;
     expandedGroups: Set<string>;
@@ -358,6 +373,7 @@ const GroupTreeNode: React.FC<{
     localFolders,
     changedFolders,
     downloadingFolders,
+    isDetectingChanges,
     targetFolders,
     focusedFolder,
     expandedGroups,
@@ -397,6 +413,7 @@ const GroupTreeNode: React.FC<{
                             localFolders={localFolders}
                             changedFolders={changedFolders}
                             downloadingFolders={downloadingFolders}
+                            isDetectingChanges={isDetectingChanges}
                             targetFolders={targetFolders}
                             focusedFolder={focusedFolder}
                             expandedGroups={expandedGroups}
@@ -421,6 +438,7 @@ const GroupTreeNode: React.FC<{
                                 folderConfig={folderConfig}
                                 isLocal={isLocal}
                                 isChanged={isChanged}
+                                isChecking={isLocal && isDetectingChanges}
                                 isChecked={isChecked}
                                 isFocused={isFocused}
                                 isDownloading={isDownloading}
@@ -446,6 +464,7 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
     changedFolders,
     downloadingFolders,
     isLoadingLocalFolders,
+    isDetectingChanges,
     searchTerm,
     targetFolders,
     focusedFolder,
@@ -529,7 +548,8 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
         setPendingDownloadFolder(null);
     }, []);
 
-    if (projectConfig === undefined || isLoadingLocalFolders) {
+    // Only show skeleton on initial load (when we have no data yet), not on refresh
+    if (projectConfig === undefined || (isLoadingLocalFolders && localFolders.length === 0)) {
         return <FullHeightSkeleton />;
     }
 
@@ -562,6 +582,7 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
                         localFolders={localFolders}
                         changedFolders={changedFolders}
                         downloadingFolders={downloadingFolders}
+                        isDetectingChanges={isDetectingChanges}
                         targetFolders={targetFolders}
                         focusedFolder={focusedFolder}
                         expandedGroups={expandedGroups}
@@ -582,7 +603,6 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
                 <DialogContent>
                     <DialogContentText>
                         Are you sure you want to download "{pendingDownloadFolder}"?
-                        This folder may contain a large amount of data.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>

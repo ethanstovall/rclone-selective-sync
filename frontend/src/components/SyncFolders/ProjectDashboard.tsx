@@ -112,7 +112,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     }
 
     // Call the backend endpoint responsible for detecting which project folders are downloaded locally.
-    const loadLocalFolders = async () => {
+    const loadLocalFolders = useCallback(async () => {
         try {
             setIsLoadingLocalFolders(true);
             const loadedLocalFolders = await FolderService.GetLocalFolders();
@@ -124,7 +124,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         } finally {
             setIsLoadingLocalFolders(false);
         }
-    }
+    }, [])
 
     // Detect and store which folders have changes
     const detectChangedFolders = useCallback(async (folders: string[]) => {
@@ -171,6 +171,14 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         setDownloadError(null);
 
         try {
+            // First, create the local folder if it doesn't exist (handles empty remote folders)
+            // Ignore errors if folder already exists
+            try {
+                await FolderService.CreateLocalFolders([folderKey]);
+            } catch {
+                // Folder may already exist, continue with download
+            }
+
             // Execute download (COPY_PULL) for this single folder without dry run
             const output = await ExecuteRcloneAction([folderKey], RcloneAction.COPY_PULL, false);
 
@@ -181,10 +189,9 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                     folder: folderKey,
                     message: folderOutput.command_error,
                 });
-            } else {
-                // Refresh local folders list after successful download
-                await loadLocalFolders();
             }
+            // Always refresh local folders list after download attempt
+            await loadLocalFolders();
         } catch (error: any) {
             setDownloadError({
                 folder: folderKey,
@@ -194,7 +201,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             // Remove from downloading list
             setDownloadingFolders((prev) => prev.filter((f) => f !== folderKey));
         }
-    }, []);
+    }, [loadLocalFolders]);
 
     useEffect(() => {
         // Recalculate the folders the user has locally and detect changes
@@ -205,7 +212,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             }
         };
         loadAndDetect();
-    }, [projectConfig, detectChangedFolders]);
+    }, [projectConfig, detectChangedFolders, loadLocalFolders]);
 
     return (
         (projectConfig.folders) ? (
@@ -319,6 +326,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             changedFolders={changedFolders}
                             downloadingFolders={downloadingFolders}
                             isLoadingLocalFolders={isLoadingLocalFolders}
+                            isDetectingChanges={isDetectingChanges}
                             searchTerm={searchTerm}
                             targetFolders={targetFolders}
                             focusedFolder={focusedFolder}
