@@ -33,20 +33,26 @@ const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderConfig }) =
                     <SubheaderTypography color="secondary">
                         Local Path
                     </SubheaderTypography>
-                    <Typography>
+                    <Typography sx={{ userSelect: "text", cursor: "text" }}>
                         {`${localRoot}/${folderConfig.local_path}`}
                     </Typography>
                     <SubheaderTypography color="secondary">
                         Remote Path
                     </SubheaderTypography>
-                    <Typography>
+                    <Typography sx={{ userSelect: "text", cursor: "text" }}>
                         {`${remoteRoot}/${folderConfig.remote_path}`}
                     </Typography>
                     <SubheaderTypography color="secondary">
                         Description
                     </SubheaderTypography>
-                    <Typography>
-                        {`${folderConfig.description}`}
+                    <Typography
+                        sx={{
+                            whiteSpace: "pre-wrap",
+                            userSelect: "text",
+                            cursor: "text",
+                        }}
+                    >
+                        {folderConfig.description}
                     </Typography>
                 </React.Fragment>
             </PaddedBox>

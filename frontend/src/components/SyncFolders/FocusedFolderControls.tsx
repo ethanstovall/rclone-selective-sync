@@ -1,7 +1,7 @@
 import { Box, FormControl, Grid2, InputLabel, MenuItem, Select, SelectChangeEvent, TextField, Typography } from "@mui/material";
 import { FolderService, FolderConfig, GroupConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import ActionButton from "../common/ActionButton";
-import { Delete, EditRounded, OpenInNewRounded } from "@mui/icons-material";
+import { Delete, EditRounded } from "@mui/icons-material";
 import React, { useEffect, useMemo, useState } from "react";
 import ListItemPaper from "../common/ListItemPaper";
 import FolderDescription from "./FolderDescription";
@@ -92,15 +92,6 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
         setIsSaveDialogOpen(false);
     };
 
-    // Open the selected folder in the user's file explorer
-    const handleOpenFolder = async (targetFolder: string) => {
-        try {
-            await FolderService.OpenFolder(targetFolder)
-        } catch (e: any) {
-            console.error(e);
-        }
-    }
-
     // Save the edited folder configuration
     const handleSaveEdits = async () => {
         try {
@@ -165,15 +156,6 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
     return (
         <Grid2 container size={12} padding={2} spacing={1} component={ListItemPaper} >
             <Grid2 size={12} display="flex" justifyContent="space-evenly" height={"10%"}>
-                <ActionButton
-                    text="Open"
-                    size="large"
-                    tooltip="Open Folder"
-                    color="primary"
-                    disabled={focusedFolder === null || !localFolders.includes(focusedFolder)}
-                    endIcon={<OpenInNewRounded />}
-                    onClick={(focusedFolder === null || !localFolders.includes(focusedFolder)) ? () => { } : () => { handleOpenFolder(focusedFolder) }}
-                />
                 <ActionButton
                     text="Edit"
                     size="large"

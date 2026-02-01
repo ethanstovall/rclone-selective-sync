@@ -226,7 +226,7 @@ const FolderItem: React.FC<{
             <ListItem
                 component={ListItemPaper}
                 elevation={isFocused ? 1 : 6}
-                sx={{ pl: indentLevel * 2 }}
+                sx={{ pl: indentLevel * 2, position: "relative", zIndex: 0 }}
             >
                 {/* Only show checkbox for local folders */}
                 {isLocal && (
@@ -545,7 +545,14 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
     }
 
     return (
-        <Box height="100%" overflow="auto">
+        <Box
+            height="100%"
+            overflow="auto"
+            sx={{
+                position: "relative",
+                zIndex: 1,
+            }}
+        >
             <List disablePadding>
                 {groupTree.map((node) => (
                     <GroupTreeNode
