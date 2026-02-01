@@ -15,3 +15,5 @@ bin/
 *.DS_Store
 # Ignore generated syso file in root
 *.syso
+# Ignore claude config
+.claude/

@@ -1,15 +1,19 @@
 # Feature: Folder Groups
 
+## Status: ✅ IMPLEMENTED (v0.2.0)
+
 ## Overview
 
-Organize folders into collapsible, hierarchical groups within each project. This replaces the current "Local" folder toggle with a unified view where all folders are always visible, organized by group, with sync status shown inline.
+Organize folders into collapsible, hierarchical groups within each project. This replaces the previous "Local" folder toggle with a unified view where all folders are always visible, organized by group, with sync status shown inline.
 
-## Current State
+**Implementation completed in v0.2.0** - See commits `d57384e`, `cff9e55`, `55f4fdb`.
 
-- Folders displayed in a flat list
-- "Local" toggle filters between all folders and locally-available folders
-- No organizational hierarchy
-- No visual distinction between synced/unsynced folders in the main view
+## ~~Current~~ Previous State
+
+- Folders ~~displayed~~ were displayed in a flat list
+- "Local" toggle ~~filters~~ filtered between all folders and locally-available folders
+- ~~No~~ Previously no organizational hierarchy
+- ~~No~~ Previously no visual distinction between synced/unsynced folders in the main view
 
 ## Proposed Changes
 
@@ -204,29 +208,34 @@ Existing `sync.json` files without groups:
 
 ## Implementation Phases
 
-### Phase 1: Data Model & Basic UI
-- Add `groups` to ProjectConfig and `group` to FolderConfig
-- Create GroupTreeView component with collapse/expand
-- Show all folders with local/remote status inline
-- Remove "Local" toggle (replaced by inline status indicators)
-- Preserve "Select all changed" checkbox at top
-- Preserve info box / detail panel on the side (no changes)
-- Optionally add [Open] button inline in tree view
+### Phase 1: Data Model & Basic UI ✅ COMPLETED
+- [x] Add `groups` to ProjectConfig and `group` to FolderConfig
+- [x] Create GroupedFolderTree component with collapse/expand
+- [x] Show all folders with local/remote status inline
+- [x] Remove "Local" toggle (replaced by inline status indicators)
+- [x] Preserve "Select all changed" checkbox at top
+- [x] Preserve info box / detail panel on the side (no changes)
+- [x] Optionally add [Open] button inline in tree view
 
-### Phase 2: Group Management
-- Add group selector to New Folder dialog
-- Implement CreateGroup functionality
-- Add "Create new group" option in dropdown
+### Phase 2: Group Management ✅ COMPLETED
+- [x] Add group selector to New Folder dialog
+- [x] Implement CreateGroup functionality
+- [x] Add "Create new group" option in dropdown
+- [x] Implement UpdateGroup functionality
+- [x] Implement DeleteGroup functionality
+- [x] Implement RenameGroup functionality
+- [x] Create ManageGroupsDialog for group CRUD operations
 
-### Phase 3: Polish
-- Right-click context menu for group operations
-- Keyboard navigation in tree view
-- Persist collapse state in localStorage
+### Phase 3: Polish 🚧 IN PROGRESS
+- [ ] Right-click context menu for group operations
+- [ ] Keyboard navigation in tree view
+- [ ] Persist collapse state in localStorage
+- [x] Migration for existing sync.json files without groups
 
-### Phase 4: Future Enhancements
-- Drag-and-drop reordering
-- Custom group colors/icons
-- Bulk operations on groups (sync all, download all)
+### Phase 4: Future Enhancements 📋 PLANNED
+- [ ] Drag-and-drop reordering
+- [ ] Custom group colors/icons
+- [ ] Bulk operations on groups (sync all, download all)
 
 ## Edge Cases
 
@@ -244,3 +253,134 @@ Existing `sync.json` files without groups:
 - Deep nesting performance
 - Group tree rendering with many folders
 - Concurrent group edits (multi-user scenario)
+
+---
+
+## Actual Implementation (v0.2.0)
+
+### Backend Implementation
+
+#### Data Models
+
+**File:** [backend/projectconfig.go](../../backend/projectconfig.go)
+
+```go
+type ProjectConfig struct {
+    AllowGlobalSync bool                    `json:"allow_global_sync"`
+    Folders         map[string]FolderConfig `json:"folders"`
+    Groups          map[string]GroupConfig  `json:"groups"` // NEW
+}
+
+type GroupConfig struct {
+    Name        string `json:"name"`
+    ParentGroup string `json:"parent_group"`
+    SortOrder   int    `json:"sort_order"`
+}
+
+type FolderConfig struct {
+    RemotePath  string `json:"remote_path"`
+    LocalPath   string `json:"local_path"`
+    Description string `json:"description"`
+    Group       string `json:"group"` // NEW - Required for new folders
+}
+```
+
+#### Migration Support
+
+Automatic migration implemented in `ProjectConfig.MigrateToGroups()`:
+- Detects old sync.json files without groups
+- Creates default "General" group
+- Assigns all ungrouped folders to "General"
+- Called automatically on project config load
+
+#### FolderService Group Operations
+
+**File:** [backend/folderservice.go](../../backend/folderservice.go)
+
+Implemented methods:
+- `CreateGroup(groupKey, config)` - Create new group
+- `UpdateGroup(groupKey, config)` - Update group properties
+- `DeleteGroup(groupKey)` - Delete group (fails if contains folders or has children)
+- `RenameGroup(oldKey, newKey, newName)` - Rename group while preserving folder assignments
+- `GetGroups()` - Retrieve all groups
+
+All operations automatically sync to remote via `syncConfigToRemote()`.
+
+### Frontend Implementation
+
+#### Components Created
+
+1. **GroupedFolderTree.tsx** ([frontend/src/components/SyncFolders/GroupedFolderTree.tsx](../../frontend/src/components/SyncFolders/GroupedFolderTree.tsx))
+   - Recursive tree rendering with collapse/expand
+   - Groups folders by parent-child hierarchy
+   - Separates "Local Folders" and "Non-Local Folders" sections
+   - Shows sync status inline (synced ✓, changed ●, not local ○)
+   - Integrated checkbox selection for sync operations
+
+2. **ManageGroupsDialog.tsx** ([frontend/src/components/SyncFolders/ManageGroupsDialog.tsx](../../frontend/src/components/SyncFolders/ManageGroupsDialog.tsx))
+   - Full CRUD interface for group management
+   - Create, rename, and delete groups
+   - Prevents deletion of groups with folders
+   - Hierarchical group display
+
+3. **NewFolderDialog.tsx** (Updated)
+   - Added group selector dropdown
+   - Required field - cannot register folder without group
+   - Shows hierarchical group structure
+
+#### UI Changes
+
+**ProjectDashboard Changes:**
+- Removed "Local" toggle switch
+- Added "Manage Groups" button
+- Integrated GroupedFolderTree component
+- Preserved "Select all changed" functionality
+- Maintained folder detail panel
+
+**Visual Hierarchy:**
+```
+▼ Local Folders
+  ▼ Group Name
+    ☑ Folder 1  ✓ Synced
+    ☑ Folder 2  ● Changed
+
+▼ Non-Local Folders
+  ► Group Name (3 folders)
+```
+
+### Key Implementation Decisions
+
+1. **Group Requirement**: All folders must belong to a group (no "ungrouped" state for new folders)
+2. **Automatic Migration**: Legacy configs auto-migrate to "General" group
+3. **Location-Based Grouping**: Primary division by local/non-local, then by user-defined groups
+4. **Remote Sync**: All group operations immediately sync to remote
+5. **Deletion Safety**: Groups with folders or children cannot be deleted
+
+### What's Still Pending
+
+From Phase 3 (Polish):
+- [ ] Right-click context menu for quick group operations
+- [ ] Keyboard navigation within tree (arrow keys, expand/collapse)
+- [ ] Persist collapse state in localStorage (currently resets on page load)
+
+From Phase 4 (Future Enhancements):
+- [ ] Drag-and-drop folder/group reordering
+- [ ] Custom group colors or icons
+- [ ] Bulk operations on entire groups (sync all in group, download all, etc.)
+
+### Migration Notes
+
+Existing users with sync.json files from v0.1.x:
+- Files are automatically migrated on first load in v0.2.0
+- All existing folders assigned to "General" group
+- No manual intervention required
+- Migration status logged in backend
+
+### Related Commits
+
+- `d57384e` - Add feature to group folders (initial data model)
+- `cff9e55` - Implementation for folder groups (backend services + frontend components)
+- `55f4fdb` - Group local and nonlocal together (UI refinement)
+- `8ce3d59` - Remove open folder button; make text selectable and formatted
+- `4515c5b` - Fix formatting, pre-create folders for download if necessary
+- `db55d55` - Tweaks and improvements
