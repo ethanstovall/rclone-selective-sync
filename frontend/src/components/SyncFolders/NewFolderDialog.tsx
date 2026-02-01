@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { FolderConfig, ProjectConfig } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models";
 import StandardDialog from "../common/StandardDialog";
 import { Box, InputAdornment, TextField } from "@mui/material";
 import { useGlobalConfig } from "../../hooks/GlobalConfigContext";
 import ActionIconButton from "../common/ActionIconButton";
+import ActionButton from "../common/ActionButton";
 import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import { OpenInNewRounded } from "@mui/icons-material";
 import { useProjectConfig } from "../../hooks/ProjectConfigContext";
@@ -14,10 +15,6 @@ interface NewFolderDialogProps {
 }
 
 const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) => {
-    useEffect(() => {
-        console.warn("rerender");
-    })
-
     // Global config state
     const { globalConfig, selectedProject } = useGlobalConfig();
     const localRoot = useMemo(() => {
@@ -32,6 +29,8 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
 
     // Action state
     const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [isBrowsing, setIsBrowsing] = useState<boolean>(false);
+    const [browseError, setBrowseError] = useState<string | null>(null);
 
     // Input state
     const [newFolderConfig, setNewFolderConfig] = useState<FolderConfig>(new FolderConfig());
@@ -54,6 +53,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
     const handleClose = () => {
         setNewFolderConfig(new FolderConfig()); // Revert changes
         setNewFolderName("");
+        setBrowseError(null);
         setIsOpen(false);
     };
 
@@ -81,6 +81,32 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
         }
     }
 
+    // Open native folder picker dialog
+    const handleBrowseFolder = async () => {
+        setIsBrowsing(true);
+        setBrowseError(null);
+        try {
+            const selectedPath = await FolderService.OpenFolderPicker();
+
+            if (selectedPath) {
+                // Update the local_path with selected folder
+                handleInputChange("local_path", selectedPath);
+
+                // Auto-fill folder name if empty (use last path segment)
+                if (!newFolderName.trim()) {
+                    const folderName = selectedPath.split('/').pop() || '';
+                    setNewFolderName(folderName);
+                }
+            }
+            // If empty string, user cancelled - do nothing
+        } catch (e: any) {
+            console.error("Error selecting folder:", e);
+            setBrowseError(e.message || "Failed to select folder");
+        } finally {
+            setIsBrowsing(false);
+        }
+    }
+
     return (
         <StandardDialog
             title={"Register New Folder"}
@@ -104,8 +130,10 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
                 <TextField
                     label="Local Path"
                     id="local-folder-path"
-                    value={newFolderConfig.local_path ?? localRoot}
+                    value={newFolderConfig.local_path || ""}
                     onChange={(event) => handleInputChange("local_path", event.target.value)}
+                    error={!!browseError}
+                    helperText={browseError || `Relative to project root: ${localRoot}/`}
                     fullWidth
                     margin="normal"
                     autoComplete="off"
@@ -116,8 +144,20 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
                                     <ActionIconButton
                                         color="primary"
                                         inputIcon={OpenInNewRounded}
+                                        tooltip="Open project folder"
                                         onClick={() => { handleOpenFolder("") }}
-                                    />{`${localRoot}/`}
+                                    />
+                                </InputAdornment>,
+                            endAdornment:
+                                <InputAdornment position="end">
+                                    <ActionButton
+                                        text="Browse..."
+                                        variant="outlined"
+                                        size="small"
+                                        loading={isBrowsing}
+                                        disabled={isBrowsing}
+                                        onClick={handleBrowseFolder}
+                                    />
                                 </InputAdornment>,
                         },
                     }}

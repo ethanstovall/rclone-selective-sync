@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import {Call as $Call, Create as $Create} from "@wailsio/runtime";
+import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -12,17 +12,15 @@ import * as $models from "./models.js";
 /**
  * Wrapper function for creating folders
  */
-export function CreateLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1403706680, targetFolders) as any;
-    return $resultPromise;
+export function CreateLocalFolders(targetFolders: string[]): $CancellablePromise<void> {
+    return $Call.ByID(1403706680, targetFolders);
 }
 
 /**
  * Wrapper function for deleting folders
  */
-export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1155014579, targetFolders) as any;
-    return $resultPromise;
+export function DeleteLocalFolders(targetFolders: string[]): $CancellablePromise<void> {
+    return $Call.ByID(1155014579, targetFolders);
 }
 
 /**
@@ -30,60 +28,55 @@ export function DeleteLocalFolders(targetFolders: string[]): Promise<void> & { c
  * locally nor remotely. It only untracks it. Full deletions should be carefully handled manually with Rclone
  * for now.
  */
-export function DeregisterFolder(targetFolder: string): Promise<$models.ProjectConfig> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1475157726, targetFolder) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function DeregisterFolder(targetFolder: string): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(1475157726, targetFolder).then(($result: any) => {
         return $$createType0($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
  * Given an existing folder, a new folder name, and a new FolderConfig, update the existing folder to match the new items.
  * Return the entire ProjectConfig after, which will contain the fully updated map of Folders.
  */
-export function EditFolder(currentFolderName: string, newFolderName: string, newFolderConfig: $models.FolderConfig): Promise<$models.ProjectConfig> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1535184624, currentFolderName, newFolderName, newFolderConfig) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function EditFolder(currentFolderName: string, newFolderName: string, newFolderConfig: $models.FolderConfig): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(1535184624, currentFolderName, newFolderName, newFolderConfig).then(($result: any) => {
         return $$createType0($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
  * GetLocalFolders checks if the local paths for all folders in the ProjectConfig exist.
  * Returns a list of folder keys where the paths exist, or an error if something goes wrong.
  */
-export function GetLocalFolders(): Promise<string[]> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1746980032) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function GetLocalFolders(): $CancellablePromise<string[]> {
+    return $Call.ByID(1746980032).then(($result: any) => {
         return $$createType1($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
  * Open the requested folder in the user's file explorer
  */
-export function OpenFolder(targetFolder: string): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(3234094764, targetFolder) as any;
-    return $resultPromise;
+export function OpenFolder(targetFolder: string): $CancellablePromise<void> {
+    return $Call.ByID(3234094764, targetFolder);
+}
+
+/**
+ * OpenFolderPicker opens a native OS folder selection dialog and returns the selected path.
+ * The returned path is relative to the project root. Returns an empty string if cancelled.
+ */
+export function OpenFolderPicker(): $CancellablePromise<string> {
+    return $Call.ByID(1001267190);
 }
 
 /**
  * Given a new folder name and a new FolderConfig, create a new FolderConfig for it in the ProjectConfig.
  * Return the entire ProjectConfig after, which will contain the fully updated map of Folders.
  */
-export function RegisterNewFolder(newFolderName: string, folderConfig: $models.FolderConfig): Promise<$models.ProjectConfig> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1863241101, newFolderName, folderConfig) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function RegisterNewFolder(newFolderName: string, folderConfig: $models.FolderConfig): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(1863241101, newFolderName, folderConfig).then(($result: any) => {
         return $$createType0($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 // Private type creation functions

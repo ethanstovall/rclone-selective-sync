@@ -8,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // Service structure for project-related operations.
@@ -53,10 +56,16 @@ func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 	}
 
 	// Step 2: Check if sync.json exists locally
-	if _, fileErr := os.Stat(configFile); os.IsNotExist(fileErr) {
+	localFileInfo, fileErr := os.Stat(configFile)
+	localExists := !os.IsNotExist(fileErr)
+
+	// Build the remote path for sync.json
+	remotePath := fmt.Sprintf("%s:%s/sync.json", remoteConfig.RemoteName, remoteConfig.BucketName)
+
+	if !localExists {
+		// Local file doesn't exist - try to pull from remote
 		fmt.Println("sync.json not found locally, attempting to pull from remote...")
 
-		// Try to pull sync.json from remote
 		pullErr := cs.pullSyncFileFromRemote()
 		if pullErr != nil {
 			// Remote doesn't have sync.json either, create a blank one locally
@@ -76,12 +85,58 @@ func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 			cs.configManager.SetProjectConfig(loadedConfig)
 		}
 	} else {
-		// sync.json exists locally, load it
+		// Local file exists - check if remote is newer
+		fmt.Println("sync.json found locally, checking remote for updates...")
+
+		// Truncate to second precision since remote timestamps don't have sub-second precision
+		localModTime := localFileInfo.ModTime().Truncate(time.Second)
+		remoteModTime, remoteErr := cs.getRemoteFileModTime(remotePath)
+
+		shouldPullFromRemote := false
+		if remoteErr != nil {
+			// Couldn't get remote mod time (offline, file doesn't exist remotely, etc.)
+			// Fall back to using local file
+			fmt.Printf("Could not check remote sync.json (%v), using local copy\n", remoteErr)
+		} else if remoteModTime.After(localModTime) {
+			// Remote is newer - pull it
+			fmt.Printf("Remote sync.json is newer (remote: %v, local: %v), pulling from remote...\n",
+				remoteModTime.Format(time.RFC3339), localModTime.Format(time.RFC3339))
+			shouldPullFromRemote = true
+		} else if localModTime.After(remoteModTime) {
+			// Local is newer than remote - this might indicate un-synced changes
+			fmt.Printf("Local sync.json is newer than remote (local: %v, remote: %v)\n",
+				localModTime.Format(time.RFC3339), remoteModTime.Format(time.RFC3339))
+
+			// Emit an event to notify the frontend that local has un-synced changes
+			if app := application.Get(); app != nil {
+				app.Event.Emit("sync-status", map[string]interface{}{
+					"status":          "local-newer",
+					"message":         "Local sync.json has changes that may not be on the remote. This could indicate a previous sync failure.",
+					"localModTime":    localModTime.Format(time.RFC3339),
+					"remoteModTime":   remoteModTime.Format(time.RFC3339),
+					"selectedProject": selectedProject,
+				})
+			}
+		} else {
+			// Local and remote are the same
+			fmt.Printf("Local sync.json matches remote (both: %v)\n", localModTime.Format(time.RFC3339))
+		}
+
+		if shouldPullFromRemote {
+			pullErr := cs.pullSyncFileFromRemote()
+			if pullErr != nil {
+				fmt.Printf("Warning: Failed to pull newer sync.json from remote (%v), using local copy\n", pullErr)
+			} else {
+				fmt.Println("Successfully updated sync.json from remote")
+			}
+		}
+
+		// Load the config (either updated from remote or existing local)
 		loadedConfig, loadErr := loadConfig[ProjectConfig](configFile)
-		fmt.Println("Loaded existing sync.json from:", configFile)
 		if loadErr != nil {
 			err = loadErr
 		}
+		fmt.Println("Loaded sync.json from:", configFile)
 		cs.configManager.SetProjectConfig(loadedConfig)
 	}
 	return *cs.configManager.GetProjectConfig(), err
@@ -211,6 +266,38 @@ func (cs *ConfigService) pullSyncFileFromRemote() error {
 
 	fmt.Printf("Successfully pulled sync.json from %s to %s\n", remotePath, configFile)
 	return nil
+}
+
+// getRemoteFileModTime gets the modification time of a file on the remote using rclone lsjson.
+// Returns the mod time or an error if the file doesn't exist or the command fails.
+func (cs *ConfigService) getRemoteFileModTime(remotePath string) (time.Time, error) {
+	// Use rclone lsjson to get file info
+	cmd := createCommand("rclone", "lsjson", remotePath)
+	output, err := cmd.Output()
+	if err != nil {
+		return time.Time{}, fmt.Errorf("rclone lsjson failed: %v", err)
+	}
+
+	// Parse the JSON output
+	var fileInfos []struct {
+		ModTime string `json:"ModTime"`
+	}
+	if err := json.Unmarshal(output, &fileInfos); err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse rclone lsjson output: %v", err)
+	}
+
+	// Check if file exists on remote
+	if len(fileInfos) == 0 {
+		return time.Time{}, fmt.Errorf("file not found on remote")
+	}
+
+	// Parse the modification time (RFC3339 format)
+	modTime, err := time.Parse(time.RFC3339, fileInfos[0].ModTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("failed to parse remote mod time: %v", err)
+	}
+
+	return modTime, nil
 }
 
 // RefreshSyncFile manually refreshes the sync.json from the remote, overwriting the local copy.

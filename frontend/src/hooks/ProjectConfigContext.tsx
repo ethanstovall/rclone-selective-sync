@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { ProjectConfig } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.js";
 import { ConfigService } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 import { useGlobalConfig } from "./GlobalConfigContext.js";
+import { Events } from "@wailsio/runtime";
+import { Alert, Snackbar } from "@mui/material";
 
 interface ProjectConfigContextProps {
     projectConfig: ProjectConfig | undefined;
@@ -28,6 +30,13 @@ const useProjectConfig = () => {
     return context;
 };
 
+interface SyncStatusWarning {
+    open: boolean;
+    message: string;
+    localModTime?: string;
+    remoteModTime?: string;
+}
+
 const ProjectConfigContextProvider = ({ children }) => {
     // State for global config
     const { selectedProject } = useGlobalConfig();
@@ -35,6 +44,28 @@ const ProjectConfigContextProvider = ({ children }) => {
     // State for project configuration
     const [projectConfig, setProjectConfig] = useState<ProjectConfig | undefined>(undefined);
     const [isLoadingProject, setIsLoadingProject] = useState<boolean>(true);
+
+    // State for sync status warning
+    const [syncWarning, setSyncWarning] = useState<SyncStatusWarning>({ open: false, message: "" });
+
+    // Listen for sync-status events from the backend
+    useEffect(() => {
+        const unsubscribe = Events.On("sync-status", (event: { data: Record<string, string> }) => {
+            const data = event.data;
+            if (data.status === "local-newer") {
+                setSyncWarning({
+                    open: true,
+                    message: data.message,
+                    localModTime: data.localModTime,
+                    remoteModTime: data.remoteModTime,
+                });
+            }
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, []);
 
     useEffect(() => {
         const loadProjectConfig = async () => {
@@ -56,10 +87,35 @@ const ProjectConfigContextProvider = ({ children }) => {
         loadProjectConfig();
     }, [selectedProject]);
 
+    const handleCloseSyncWarning = () => {
+        setSyncWarning({ ...syncWarning, open: false });
+    };
+
     return (
         // The Provider gives access to the context to its children.
         <ProjectConfigContext.Provider value={{ projectConfig, isLoadingProject, setProjectConfig }}>
             {children}
+            <Snackbar
+                open={syncWarning.open}
+                autoHideDuration={10000}
+                onClose={handleCloseSyncWarning}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+            >
+                <Alert
+                    onClose={handleCloseSyncWarning}
+                    severity="warning"
+                    variant="filled"
+                    sx={{ width: "100%" }}
+                >
+                    {syncWarning.message}
+                    {syncWarning.localModTime && syncWarning.remoteModTime && (
+                        <div style={{ fontSize: "0.85em", marginTop: "4px" }}>
+                            Local: {new Date(syncWarning.localModTime).toLocaleString()} |
+                            Remote: {new Date(syncWarning.remoteModTime).toLocaleString()}
+                        </div>
+                    )}
+                </Alert>
+            </Snackbar>
         </ProjectConfigContext.Provider>
     );
 }

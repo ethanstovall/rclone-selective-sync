@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type FolderService struct {
@@ -309,4 +311,55 @@ func normalizePath(path string) string {
 	// Replace backslashes with slashes and trim leading/trailing slashes
 	normalized := strings.ReplaceAll(path, "\\", "/")
 	return strings.Trim(normalized, "/")
+}
+
+// OpenFolderPicker opens a native OS folder selection dialog and returns the selected path.
+// The returned path is relative to the project root. Returns an empty string if cancelled.
+func (fs *FolderService) OpenFolderPicker() (string, error) {
+	// Get the project remote config to determine the project root
+	projectRemoteConfig := fs.configManager.GetSelectedProjectRemoteConfig()
+	if projectRemoteConfig == nil {
+		return "", fmt.Errorf("no project selected")
+	}
+
+	projectRoot := projectRemoteConfig.LocalPath
+
+	// Get the app instance to access dialogs
+	app := application.Get()
+	if app == nil {
+		return "", fmt.Errorf("application instance not available")
+	}
+
+	// Open native directory picker dialog using Dialog.OpenFile with CanChooseDirectories
+	selectedPath, err := app.Dialog.OpenFile().
+		SetTitle("Select Folder to Register").
+		SetDirectory(projectRoot).
+		CanChooseDirectories(true).
+		CanChooseFiles(false).
+		CanCreateDirectories(true).
+		PromptForSingleSelection()
+
+	if err != nil {
+		return "", fmt.Errorf("failed to open folder picker: %w", err)
+	}
+
+	// User cancelled - return empty string (not an error)
+	if selectedPath == "" {
+		return "", nil
+	}
+
+	// Normalize the selected path for comparison
+	normalizedSelected := normalizePath(selectedPath)
+	normalizedRoot := normalizePath(projectRoot)
+
+	// Validate: selected folder must be within project root
+	if !strings.HasPrefix(normalizedSelected, normalizedRoot) {
+		return "", fmt.Errorf("selected folder must be within the project root: %s", projectRoot)
+	}
+
+	// Convert to relative path
+	relativePath := strings.TrimPrefix(normalizedSelected, normalizedRoot)
+	relativePath = strings.TrimPrefix(relativePath, "/")
+
+	return relativePath, nil
 }

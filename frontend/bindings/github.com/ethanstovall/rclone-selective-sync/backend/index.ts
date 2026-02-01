@@ -10,4 +10,11 @@ export {
     SyncService
 };
 
-export * from "./models.js";
+export {
+    FolderConfig,
+    GlobalConfig,
+    ProjectConfig,
+    RcloneAction,
+    RcloneActionOutput,
+    RemoteConfig
+} from "./models.js";

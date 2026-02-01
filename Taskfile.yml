@@ -14,6 +14,15 @@ vars:
     sh: '{{if eq OS "windows"}}powershell -Command "(Get-Content version.txt -Raw).Trim()"{{else}}cat version.txt | tr -d ''\n''{{end}}'
 
 tasks:
+  setup:
+    summary: First-time setup - installs dependencies
+    cmds:
+      - echo "Installing wails3..."
+      - go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+      - echo "Installing frontend dependencies..."
+      - cd frontend && npm install
+      - echo "Setup complete! Run 'task dev' to start development."
+
   build:
     summary: Builds the application
     cmds:
@@ -32,7 +41,7 @@ tasks:
   dev:
     summary: Runs the application in development mode
     cmds:
-      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+      - $HOME/go/bin/wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
   darwin:build:universal:
     summary: Builds darwin universal binary (arm64 + amd64)

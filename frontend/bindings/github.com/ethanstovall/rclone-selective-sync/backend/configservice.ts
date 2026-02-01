@@ -8,7 +8,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import {Call as $Call, Create as $Create} from "@wailsio/runtime";
+import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -22,14 +22,11 @@ import * as $models from "./models.js";
  * enough to allow user selection.
  * TODO Don't expose the application keys in the frontend; send only the remote names.
  */
-export function LoadGlobalConfig(): Promise<[$models.GlobalConfig, string]> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1686438339) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function LoadGlobalConfig(): $CancellablePromise<[$models.GlobalConfig, string]> {
+    return $Call.ByID(1686438339).then(($result: any) => {
         $result[0] = $$createType0($result[0]);
         return $result;
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
@@ -37,13 +34,10 @@ export function LoadGlobalConfig(): Promise<[$models.GlobalConfig, string]> & { 
  * path doesn't exist, create it. If sync.json is not found locally, attempt to pull it from the
  * remote. If it doesn't exist remotely either, create a blank one locally.
  */
-export function LoadSelectedProjectConfig(): Promise<$models.ProjectConfig> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(3182534090) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function LoadSelectedProjectConfig(): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(3182534090).then(($result: any) => {
         return $$createType1($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
@@ -51,21 +45,17 @@ export function LoadSelectedProjectConfig(): Promise<$models.ProjectConfig> & { 
  * This is intended to be called by the user via a "Refresh" button in the UI.
  * Returns the updated ProjectConfig and any error encountered.
  */
-export function RefreshSyncFile(): Promise<$models.ProjectConfig> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(3554693892) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function RefreshSyncFile(): $CancellablePromise<$models.ProjectConfig> {
+    return $Call.ByID(3554693892).then(($result: any) => {
         return $$createType1($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
  * Write the given selected project to the global configuration file.
  */
-export function SetSelectedProject(selectedProject: string): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(2749222836, selectedProject) as any;
-    return $resultPromise;
+export function SetSelectedProject(selectedProject: string): $CancellablePromise<void> {
+    return $Call.ByID(2749222836, selectedProject);
 }
 
 // Private type creation functions
