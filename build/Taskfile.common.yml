@@ -64,6 +64,8 @@ tasks:
     generates:
       - "icons.icns"
       - "icon.ico"
+    status:
+      - test -f icons.icns && test -f icon.ico
     cmds:
       - wails3 generate icons -input appicon.png
 
