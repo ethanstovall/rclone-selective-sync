@@ -227,92 +227,92 @@ const FolderItem: React.FC<{
     onFocus,
     onRequestDownload,
 }) => {
-    const handleOpenFolder = async () => {
-        try {
-            await FolderService.OpenFolder(folderKey);
-        } catch (e) {
-            console.error("Failed to open folder:", e);
-        }
-    };
+        const handleOpenFolder = async () => {
+            try {
+                await FolderService.OpenFolder(folderKey);
+            } catch (e) {
+                console.error("Failed to open folder:", e);
+            }
+        };
 
-    return (
-        <>
-            <ListItem
-                component={ListItemPaper}
-                elevation={isFocused ? 1 : 6}
-                sx={{ pl: indentLevel * 2, position: "relative", zIndex: 0 }}
-            >
-                {/* Only show checkbox for local folders */}
-                {isLocal && (
-                    <Box>
-                        <ListItemButton onClick={onToggle} sx={{ minWidth: "auto", p: 1 }}>
-                            <Checkbox
-                                edge="start"
-                                checked={isChecked}
-                                tabIndex={-1}
-                                disableRipple
-                            />
-                        </ListItemButton>
-                    </Box>
-                )}
-                {/* Folder name - clickable area for focus */}
-                <Box
-                    sx={{
-                        flexGrow: 1,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        py: 1,
-                        pl: isLocal ? 0 : 2,
-                    }}
-                    onClick={onFocus}
+        return (
+            <>
+                <ListItem
+                    component={ListItemPaper}
+                    elevation={isFocused ? 1 : 6}
+                    sx={{ pl: indentLevel * 2, position: "relative", zIndex: 0 }}
                 >
-                    <ListItemText
-                        primary={folderKey}
-                        primaryTypographyProps={{
-                            color: isLocal ? "secondary" : "text.disabled",
-                        }}
-                    />
-                </Box>
-                {/* Right-side controls - status aligned, then action button */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mr: 1 }}>
-                    {/* Status indicator - fixed width for alignment */}
-                    <Box sx={{ minWidth: 80 }}>
-                        <FolderStatus isLocal={isLocal} isChanged={isChanged} isChecking={isChecking} />
-                    </Box>
-                    {/* Open folder button for local folders */}
+                    {/* Only show checkbox for local folders */}
                     {isLocal && (
-                        <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={handleOpenFolder}
-                            title="Open folder"
-                        >
-                            <OpenInNewRounded fontSize="small" />
-                        </IconButton>
+                        <Box>
+                            <ListItemButton onClick={onToggle} sx={{ minWidth: "auto", p: 1 }}>
+                                <Checkbox
+                                    edge="start"
+                                    checked={isChecked}
+                                    tabIndex={-1}
+                                    disableRipple
+                                />
+                            </ListItemButton>
+                        </Box>
                     )}
-                    {/* Download button for non-local folders */}
-                    {!isLocal && (
-                        <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={onRequestDownload}
-                            disabled={isDownloading}
-                            title="Download folder"
-                        >
-                            {isDownloading ? (
-                                <CircularProgress size={18} />
-                            ) : (
-                                <Download fontSize="small" />
-                            )}
-                        </IconButton>
-                    )}
-                </Box>
-            </ListItem>
-            <Divider />
-        </>
-    );
-};
+                    {/* Folder name - clickable area for focus */}
+                    <Box
+                        sx={{
+                            flexGrow: 1,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            py: 1,
+                            pl: isLocal ? 0 : 2,
+                        }}
+                        onClick={onFocus}
+                    >
+                        <ListItemText
+                            primary={folderKey}
+                            primaryTypographyProps={{
+                                color: isLocal ? "secondary" : "text.disabled",
+                            }}
+                        />
+                    </Box>
+                    {/* Right-side controls - status aligned, then action button */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, mr: 1 }}>
+                        {/* Status indicator - fixed width for alignment */}
+                        <Box sx={{ minWidth: 80 }}>
+                            <FolderStatus isLocal={isLocal} isChanged={isChanged} isChecking={isChecking} />
+                        </Box>
+                        {/* Open folder button for local folders */}
+                        {isLocal && (
+                            <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={handleOpenFolder}
+                                title="Open folder"
+                            >
+                                <OpenInNewRounded fontSize="small" />
+                            </IconButton>
+                        )}
+                        {/* Download button for non-local folders */}
+                        {!isLocal && (
+                            <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={onRequestDownload}
+                                disabled={isDownloading}
+                                title="Download folder"
+                            >
+                                {isDownloading ? (
+                                    <CircularProgress size={18} />
+                                ) : (
+                                    <Download fontSize="small" />
+                                )}
+                            </IconButton>
+                        )}
+                    </Box>
+                </ListItem>
+                <Divider />
+            </>
+        );
+    };
 
 // Group header component (collapsible)
 const GroupHeader: React.FC<{
@@ -382,105 +382,106 @@ const GroupTreeNode: React.FC<{
     onFocusFolder,
     onDownloadFolder,
 }) => {
-    const isExpanded = expandedGroups.has(node.key);
+        const isExpanded = expandedGroups.has(node.key);
 
-    // Count total folders in this group (including nested)
-    const countFolders = (n: GroupNode): number => {
+        // Count total folders in this group (including nested)
+        const countFolders = (n: GroupNode): number => {
+            return (
+                n.folders.length +
+                n.children.reduce((sum, child) => sum + countFolders(child), 0)
+            );
+        };
+        const folderCount = countFolders(node);
+
         return (
-            n.folders.length +
-            n.children.reduce((sum, child) => sum + countFolders(child), 0)
-        );
-    };
-    const folderCount = countFolders(node);
+            <Box>
+                <GroupHeader
+                    groupNode={node}
+                    isExpanded={isExpanded}
+                    indentLevel={indentLevel}
+                    folderCount={folderCount}
+                    onToggle={() => onToggleGroup(node.key)}
+                />
+                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                        {/* Render child groups */}
+                        {node.children.map((childNode) => (
+                            <GroupTreeNode
+                                key={childNode.key}
+                                node={childNode}
+                                indentLevel={indentLevel + 1}
+                                localFolders={localFolders}
+                                changedFolders={changedFolders}
+                                downloadingFolders={downloadingFolders}
+                                isDetectingChanges={isDetectingChanges}
+                                targetFolders={targetFolders}
+                                focusedFolder={focusedFolder}
+                                expandedGroups={expandedGroups}
+                                onToggleGroup={onToggleGroup}
+                                onToggleFolder={onToggleFolder}
+                                onFocusFolder={onFocusFolder}
+                                onDownloadFolder={onDownloadFolder}
+                            />
+                        ))}
+                        {/* Render folders in this group - local first, then non-local */}
+                        {(() => {
+                            const localFolderItems = node.folders
+                                .filter(({ key }) => localFolders.includes(key))
+                                .sort((a, b) => a.key.localeCompare(b.key));
+                            const nonLocalFolderItems = node.folders
+                                .filter(({ key }) => !localFolders.includes(key))
+                                .sort((a, b) => a.key.localeCompare(b.key));
 
-    return (
-        <Box>
-            <GroupHeader
-                groupNode={node}
-                isExpanded={isExpanded}
-                indentLevel={indentLevel}
-                folderCount={folderCount}
-                onToggle={() => onToggleGroup(node.key)}
-            />
-            <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                    {/* Render child groups */}
-                    {node.children.map((childNode) => (
-                        <GroupTreeNode
-                            key={childNode.key}
-                            node={childNode}
-                            indentLevel={indentLevel + 1}
-                            localFolders={localFolders}
-                            changedFolders={changedFolders}
-                            downloadingFolders={downloadingFolders}
-                            isDetectingChanges={isDetectingChanges}
-                            targetFolders={targetFolders}
-                            focusedFolder={focusedFolder}
-                            expandedGroups={expandedGroups}
-                            onToggleGroup={onToggleGroup}
-                            onToggleFolder={onToggleFolder}
-                            onFocusFolder={onFocusFolder}
-                            onDownloadFolder={onDownloadFolder}
-                        />
-                    ))}
-                    {/* Render folders in this group - local first, then non-local */}
-                    {(() => {
-                        const localFolderItems = node.folders
-                            .filter(({ key }) => localFolders.includes(key))
-                            .sort((a, b) => a.key.localeCompare(b.key));
-                        const nonLocalFolderItems = node.folders
-                            .filter(({ key }) => !localFolders.includes(key))
-                            .sort((a, b) => a.key.localeCompare(b.key));
+                            const renderFolder = ({ key: folderKey, config: folderConfig }: { key: string; config: FolderConfig }) => {
+                                const isLocal = localFolders.includes(folderKey);
+                                const isChanged = changedFolders.includes(folderKey);
+                                const isChecked = targetFolders.includes(folderKey);
+                                const isFocused = focusedFolder === folderKey;
+                                const isDownloading = downloadingFolders.includes(folderKey);
 
-                        const renderFolder = ({ key: folderKey, config: folderConfig }: { key: string; config: FolderConfig }) => {
-                            const isLocal = localFolders.includes(folderKey);
-                            const isChanged = changedFolders.includes(folderKey);
-                            const isChecked = targetFolders.includes(folderKey);
-                            const isFocused = focusedFolder === folderKey;
-                            const isDownloading = downloadingFolders.includes(folderKey);
+                                return (
+                                    <FolderItem
+                                        key={folderKey}
+                                        folderKey={folderKey}
+                                        folderConfig={folderConfig}
+                                        isLocal={isLocal}
+                                        isChanged={isChanged}
+                                        isChecking={isLocal && isDetectingChanges}
+                                        isChecked={isChecked}
+                                        isFocused={isFocused}
+                                        isDownloading={isDownloading}
+                                        indentLevel={indentLevel + 1}
+                                        onToggle={() => onToggleFolder(folderKey)}
+                                        onFocus={() =>
+                                            onFocusFolder(isFocused ? null : folderKey)
+                                        }
+                                        onRequestDownload={() => onDownloadFolder(folderKey)}
+                                    />
+                                );
+                            };
 
                             return (
-                                <FolderItem
-                                    key={folderKey}
-                                    folderKey={folderKey}
-                                    folderConfig={folderConfig}
-                                    isLocal={isLocal}
-                                    isChanged={isChanged}
-                                    isChecking={isLocal && isDetectingChanges}
-                                    isChecked={isChecked}
-                                    isFocused={isFocused}
-                                    isDownloading={isDownloading}
-                                    indentLevel={indentLevel + 1}
-                                    onToggle={() => onToggleFolder(folderKey)}
-                                    onFocus={() =>
-                                        onFocusFolder(isFocused ? null : folderKey)
-                                    }
-                                    onRequestDownload={() => onDownloadFolder(folderKey)}
-                                />
+                                <>
+                                    {localFolderItems.map(renderFolder)}
+                                    {localFolderItems.length > 0 && nonLocalFolderItems.length > 0 && (
+                                        <Divider
+                                            component={ListItemPaper}
+                                            sx={{
+                                                my: 0.1,
+                                                mx: (indentLevel + 1) * 2,
+                                                opacity: 0.8,
+                                            }}
+                                        />
+                                    )}
+                                    {nonLocalFolderItems.map(renderFolder)}
+                                </>
                             );
-                        };
-
-                        return (
-                            <>
-                                {localFolderItems.map(renderFolder)}
-                                {localFolderItems.length > 0 && nonLocalFolderItems.length > 0 && (
-                                    <Divider
-                                        sx={{
-                                            my: 0.5,
-                                            mx: (indentLevel + 1) * 2,
-                                            borderStyle: "dashed",
-                                        }}
-                                    />
-                                )}
-                                {nonLocalFolderItems.map(renderFolder)}
-                            </>
-                        );
-                    })()}
-                </List>
-            </Collapse>
-        </Box>
-    );
-};
+                        })()}
+                    </List>
+                </Collapse>
+            </Box>
+        );
+    };
 
 // Main component
 const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({

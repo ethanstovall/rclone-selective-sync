@@ -135,6 +135,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
     // Form state
     const [newGroupName, setNewGroupName] = useState("");
     const [newGroupParent, setNewGroupParent] = useState("");
+    const [newGroupSortOrder, setNewGroupSortOrder] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -146,6 +147,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
     const handleOpenAdd = () => {
         setNewGroupName("");
         setNewGroupParent("");
+        setNewGroupSortOrder(0);
         setError(null);
         setIsAddDialogOpen(true);
     };
@@ -156,6 +158,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
             setEditingGroupKey(groupKey);
             setNewGroupName(group.name);
             setNewGroupParent(group.parent_group || "");
+            setNewGroupSortOrder(group.sort_order || 0);
             setError(null);
             setIsEditDialogOpen(true);
         }
@@ -178,7 +181,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
             const groupConfig = new GroupConfig({
                 name: newGroupName.trim(),
                 parent_group: newGroupParent || "",
-                sort_order: 0,
+                sort_order: newGroupSortOrder,
             });
 
             const updatedConfig: ProjectConfig = await FolderService.CreateGroup(groupKey, groupConfig);
@@ -186,6 +189,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
             setIsAddDialogOpen(false);
             setNewGroupName("");
             setNewGroupParent("");
+            setNewGroupSortOrder(0);
         } catch (e: any) {
             setError(e.message || "Failed to create group");
         } finally {
@@ -203,7 +207,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
             const groupConfig = new GroupConfig({
                 name: newGroupName.trim(),
                 parent_group: newGroupParent || "",
-                sort_order: availableGroups[editingGroupKey]?.sort_order || 0,
+                sort_order: newGroupSortOrder,
             });
 
             const updatedConfig: ProjectConfig = await FolderService.UpdateGroup(editingGroupKey, groupConfig);
@@ -212,6 +216,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
             setEditingGroupKey(null);
             setNewGroupName("");
             setNewGroupParent("");
+            setNewGroupSortOrder(0);
         } catch (e: any) {
             setError(e.message || "Failed to update group");
         } finally {
@@ -376,6 +381,15 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
                             ))}
                         </Select>
                     </FormControl>
+                    <TextField
+                        label="Sort Order"
+                        type="number"
+                        value={newGroupSortOrder}
+                        onChange={(e) => setNewGroupSortOrder(parseInt(e.target.value) || 0)}
+                        fullWidth
+                        margin="normal"
+                        helperText="Lower numbers appear first. Groups with same order are sorted alphabetically."
+                    />
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setIsAddDialogOpen(false)} disabled={isLoading}>
@@ -427,6 +441,15 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
                             ))}
                         </Select>
                     </FormControl>
+                    <TextField
+                        label="Sort Order"
+                        type="number"
+                        value={newGroupSortOrder}
+                        onChange={(e) => setNewGroupSortOrder(parseInt(e.target.value) || 0)}
+                        fullWidth
+                        margin="normal"
+                        helperText="Lower numbers appear first. Groups with same order are sorted alphabetically."
+                    />
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setIsEditDialogOpen(false)} disabled={isLoading}>
