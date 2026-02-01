@@ -423,34 +423,59 @@ const GroupTreeNode: React.FC<{
                             onDownloadFolder={onDownloadFolder}
                         />
                     ))}
-                    {/* Render folders in this group */}
-                    {node.folders.map(({ key: folderKey, config: folderConfig }) => {
-                        const isLocal = localFolders.includes(folderKey);
-                        const isChanged = changedFolders.includes(folderKey);
-                        const isChecked = targetFolders.includes(folderKey);
-                        const isFocused = focusedFolder === folderKey;
-                        const isDownloading = downloadingFolders.includes(folderKey);
+                    {/* Render folders in this group - local first, then non-local */}
+                    {(() => {
+                        const localFolderItems = node.folders
+                            .filter(({ key }) => localFolders.includes(key))
+                            .sort((a, b) => a.key.localeCompare(b.key));
+                        const nonLocalFolderItems = node.folders
+                            .filter(({ key }) => !localFolders.includes(key))
+                            .sort((a, b) => a.key.localeCompare(b.key));
+
+                        const renderFolder = ({ key: folderKey, config: folderConfig }: { key: string; config: FolderConfig }) => {
+                            const isLocal = localFolders.includes(folderKey);
+                            const isChanged = changedFolders.includes(folderKey);
+                            const isChecked = targetFolders.includes(folderKey);
+                            const isFocused = focusedFolder === folderKey;
+                            const isDownloading = downloadingFolders.includes(folderKey);
+
+                            return (
+                                <FolderItem
+                                    key={folderKey}
+                                    folderKey={folderKey}
+                                    folderConfig={folderConfig}
+                                    isLocal={isLocal}
+                                    isChanged={isChanged}
+                                    isChecking={isLocal && isDetectingChanges}
+                                    isChecked={isChecked}
+                                    isFocused={isFocused}
+                                    isDownloading={isDownloading}
+                                    indentLevel={indentLevel + 1}
+                                    onToggle={() => onToggleFolder(folderKey)}
+                                    onFocus={() =>
+                                        onFocusFolder(isFocused ? null : folderKey)
+                                    }
+                                    onRequestDownload={() => onDownloadFolder(folderKey)}
+                                />
+                            );
+                        };
 
                         return (
-                            <FolderItem
-                                key={folderKey}
-                                folderKey={folderKey}
-                                folderConfig={folderConfig}
-                                isLocal={isLocal}
-                                isChanged={isChanged}
-                                isChecking={isLocal && isDetectingChanges}
-                                isChecked={isChecked}
-                                isFocused={isFocused}
-                                isDownloading={isDownloading}
-                                indentLevel={indentLevel + 1}
-                                onToggle={() => onToggleFolder(folderKey)}
-                                onFocus={() =>
-                                    onFocusFolder(isFocused ? null : folderKey)
-                                }
-                                onRequestDownload={() => onDownloadFolder(folderKey)}
-                            />
+                            <>
+                                {localFolderItems.map(renderFolder)}
+                                {localFolderItems.length > 0 && nonLocalFolderItems.length > 0 && (
+                                    <Divider
+                                        sx={{
+                                            my: 0.5,
+                                            mx: (indentLevel + 1) * 2,
+                                            borderStyle: "dashed",
+                                        }}
+                                    />
+                                )}
+                                {nonLocalFolderItems.map(renderFolder)}
+                            </>
                         );
-                    })}
+                    })()}
                 </List>
             </Collapse>
         </Box>
