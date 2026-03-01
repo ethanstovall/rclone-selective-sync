@@ -21,14 +21,16 @@ interface TaskPanelItemProps {
 // --- Status helpers ---
 
 function getStatusIcon(task: Task) {
+    if (task.status === "pending") return <HourglassBottom fontSize="small" color="disabled" />;
     if (task.status === "completed") return <CheckCircle fontSize="small" color="success" />;
     if (task.status === "error") return <ErrorIcon fontSize="small" color="error" />;
     if (task.status === "awaiting_approval") return <Visibility fontSize="small" color="warning" />;
-    if (task.phase === "dry") return <HourglassBottom fontSize="small" color="info" />;
+    if (task.phase === "dry") return <HourglassBottom fontSize="small" color="secondary" />;
     return <HourglassBottom fontSize="small" color="primary" />;
 }
 
 function getStatusLabel(task: Task) {
+    if (task.status === "pending") return "Queued";
     if (task.status === "completed") return "Done";
     if (task.status === "error") return "Error";
     if (task.status === "awaiting_approval") return "Review";
@@ -38,11 +40,12 @@ function getStatusLabel(task: Task) {
     return `${completedCount}/${totalCount}`;
 }
 
-function getStatusColor(task: Task): "success" | "error" | "warning" | "info" | "primary" {
+function getStatusColor(task: Task): "success" | "error" | "warning" | "secondary" | "primary" | "default" {
+    if (task.status === "pending") return "default";
     if (task.status === "completed") return "success";
     if (task.status === "error") return "error";
     if (task.status === "awaiting_approval") return "warning";
-    if (task.phase === "dry") return "info";
+    if (task.phase === "dry") return "secondary";
     return "primary";
 }
 
@@ -100,6 +103,11 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                 <ListItemText
                     primary={task.label}
                     primaryTypographyProps={{ variant: "body2", noWrap: true }}
+                    secondary={task.folders.length <= 3
+                        ? task.folders.join(", ")
+                        : `${task.folders.slice(0, 3).join(", ")} +${task.folders.length - 3} more`
+                    }
+                    secondaryTypographyProps={{ variant: "caption", noWrap: true, color: "text.disabled" }}
                 />
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, ml: 1, flexShrink: 0 }}>
                     <Chip
@@ -119,13 +127,15 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                             </IconButton>
                         </Tooltip>
                     )}
-                    {isExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                    <Box sx={{ visibility: task.status === "pending" || task.status === "completed" ? "hidden" : "visible" }}>
+                        {isExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                    </Box>
                 </Box>
                 {task.status === "running" && (
                     <LinearProgress
                         variant="determinate"
                         value={progress}
-                        color={task.phase === "dry" ? "info" : "primary"}
+                        color={task.phase === "dry" ? "secondary" : "primary"}
                         sx={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2 }}
                     />
                 )}
@@ -140,7 +150,14 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                         value={tabValue}
                         onChange={(_e, v) => setTabValue(v)}
                         variant="scrollable"
-                        scrollButtons={false}
+                        scrollButtons="auto"
+                        onWheel={(e) => {
+                            e.stopPropagation();
+                            setTabValue(prev => {
+                                const next = prev + (e.deltaY > 0 ? 1 : -1);
+                                return Math.max(0, Math.min(next, task.folders.length - 1));
+                            });
+                        }}
                         sx={{
                             minHeight: 36,
                             "& .MuiTab-root": {

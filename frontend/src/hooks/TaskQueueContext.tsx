@@ -14,7 +14,7 @@ export interface TaskFolderResult {
 }
 
 export type TaskType = "rclone-action" | "backup" | "detect-changes";
-export type TaskStatus = "running" | "awaiting_approval" | "completed" | "error";
+export type TaskStatus = "pending" | "running" | "awaiting_approval" | "completed" | "error";
 
 export interface Task {
     taskId: string;
@@ -57,12 +57,12 @@ interface DetectCompleteEvent {
 
 // --- Label generation ---
 
-function buildTaskLabel(type: TaskType, action?: RcloneAction, folders?: string[], dry?: boolean): string {
-    if (type === "backup") return `Full Backup${dry ? " (preview)" : ""}`;
+function buildTaskLabel(type: TaskType, action?: RcloneAction, folders?: string[]): string {
+    if (type === "backup") return "Full Backup";
     if (type === "detect-changes") return "Detecting changes";
     const actionName = action === RcloneAction.SYNC_PUSH ? "Push" : action === RcloneAction.SYNC_PULL ? "Pull" : "Download";
     const count = folders?.length ?? 0;
-    return `${actionName} ${count} folder${count !== 1 ? "s" : ""}${dry ? " (preview)" : ""}`;
+    return `${actionName} ${count} folder${count !== 1 ? "s" : ""}`;
 }
 
 // --- Auto-dismiss delay ---
@@ -117,59 +117,70 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
     const [checkedFolders, setCheckedFolders] = useState<string[]>([]);
     const [isDetectingChanges, setIsDetectingChanges] = useState(false);
 
-    // Track auto-dismiss timers so we can clear them
-    const dismissTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
     // Track tasks that have auto-dismiss paused (user is viewing them)
     const pausedTasks = useRef<Set<string>>(new Set());
 
-    // --- Auto-dismiss logic ---
-
-    const scheduleAutoDismiss = useCallback((taskId: string) => {
-        // Don't auto-dismiss if paused
-        if (pausedTasks.current.has(taskId)) return;
-
-        // Clear any existing timer
-        if (dismissTimers.current[taskId]) {
-            clearTimeout(dismissTimers.current[taskId]);
-        }
-
-        dismissTimers.current[taskId] = setTimeout(() => {
-            setTasks(prev => {
-                const task = prev[taskId];
-                if (!task || task.status === "error") return prev; // Don't auto-dismiss errors
-                const next = { ...prev };
-                delete next[taskId];
-                return next;
-            });
-            delete dismissTimers.current[taskId];
-        }, AUTO_DISMISS_MS);
-    }, []);
+    // --- Auto-dismiss logic (interval-based, checks completedAt timestamps) ---
 
     const pauseAutoDismiss = useCallback((taskId: string) => {
         pausedTasks.current.add(taskId);
-        if (dismissTimers.current[taskId]) {
-            clearTimeout(dismissTimers.current[taskId]);
-            delete dismissTimers.current[taskId];
-        }
     }, []);
 
     const resumeAutoDismiss = useCallback((taskId: string) => {
         pausedTasks.current.delete(taskId);
-        // Re-schedule if the task is completed successfully
-        setTasks(prev => {
-            const task = prev[taskId];
-            if (task && task.status === "completed") {
-                scheduleAutoDismiss(taskId);
-            }
-            return prev;
-        });
-    }, [scheduleAutoDismiss]);
+    }, []);
 
-    // Cleanup timers on unmount
     useEffect(() => {
-        return () => {
-            Object.values(dismissTimers.current).forEach(clearTimeout);
-        };
+        const interval = setInterval(() => {
+            setTasks(prev => {
+                const now = Date.now();
+                let changed = false;
+                const next = { ...prev };
+                for (const [id, task] of Object.entries(next)) {
+                    if (task.status === "completed" && task.completedAt &&
+                        !pausedTasks.current.has(id) &&
+                        now - task.completedAt >= AUTO_DISMISS_MS) {
+                        delete next[id];
+                        changed = true;
+                    }
+                }
+                return changed ? next : prev;
+            });
+        }, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // --- Clear queue on project switch ---
+
+    useEffect(() => {
+        setTasks({});
+        setDetectedChangedFolders([]);
+        setCheckedFolders([]);
+        setIsDetectingChanges(false);
+        pausedTasks.current.clear();
+        launchedTaskIds.current.clear();
+    }, [selectedProject]);
+
+    // --- FIFO queue processing ---
+
+    // Ref to prevent double-launching from React batching
+    const launchedTaskIds = useRef<Set<string>>(new Set());
+
+    const launchTask = useCallback((task: Task) => {
+        if (launchedTaskIds.current.has(task.taskId)) return;
+        launchedTaskIds.current.add(task.taskId);
+
+        setTasks(prev => {
+            const existing = prev[task.taskId];
+            if (!existing || existing.status !== "pending") return prev;
+            return { ...prev, [task.taskId]: { ...existing, status: "running" } };
+        });
+
+        if (task.type === "rclone-action" && task.action !== undefined) {
+            SyncService.ExecuteRcloneActionAsync(task.taskId, task.folders, task.action, task.dry ?? false);
+        } else if (task.type === "backup") {
+            SyncService.ExecuteFullBackupAsync(task.taskId, task.dry ?? false);
+        }
     }, []);
 
     // --- Event subscriptions ---
@@ -191,6 +202,38 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
                     },
                 };
 
+                // Check if all folders have reported — determine final status here
+                // to avoid race condition with task-complete event delivery order
+                const allComplete = task.folders.every(f => f in updatedResults);
+                if (allComplete) {
+                    const hasAnyError = Object.values(updatedResults).some(r => r.commandError.length > 0);
+
+                    // Dry run succeeded without errors → awaiting approval
+                    if (task.dry && !hasAnyError) {
+                        return {
+                            ...prev,
+                            [taskId]: {
+                                ...task,
+                                results: updatedResults,
+                                status: "awaiting_approval",
+                                completedAt: Date.now(),
+                            },
+                        };
+                    }
+
+                    const finalStatus: TaskStatus = hasAnyError ? "error" : "completed";
+
+                    return {
+                        ...prev,
+                        [taskId]: {
+                            ...task,
+                            results: updatedResults,
+                            status: finalStatus,
+                            completedAt: Date.now(),
+                        },
+                    };
+                }
+
                 return {
                     ...prev,
                     [taskId]: {
@@ -203,15 +246,15 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
 
         const unsubTaskComplete = Events.On("task-complete", (event: { data: TaskCompleteEvent }) => {
             const { taskId } = event.data;
+            // Fallback: only finalize if folder-complete handler hasn't already
             setTasks(prev => {
                 const task = prev[taskId];
-                if (!task) return prev;
+                if (!task || task.status !== "running") return prev;
 
                 const hasAnyError = Object.values(task.results).some(r => r.commandError.length > 0);
                 const finalStatus: TaskStatus = hasAnyError ? "error" : "completed";
 
-                // Dry run succeeded without errors → move to awaiting approval
-                if (task.dry && finalStatus === "completed") {
+                if (task.dry && !hasAnyError) {
                     return {
                         ...prev,
                         [taskId]: {
@@ -220,11 +263,6 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
                             completedAt: Date.now(),
                         },
                     };
-                }
-
-                // Final run or error → normal completion
-                if (finalStatus === "completed") {
-                    scheduleAutoDismiss(taskId);
                 }
 
                 return {
@@ -260,13 +298,30 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
             unsubDetectFolder();
             unsubDetectComplete();
         };
-    }, [scheduleAutoDismiss]);
+    }, []);
+
+    // --- Queue processor: launch next pending task when active slot is free ---
+
+    useEffect(() => {
+        const taskList = Object.values(tasks);
+        const hasActiveTask = taskList.some(
+            t => t.type !== "detect-changes" &&
+                 (t.status === "running" || t.status === "awaiting_approval")
+        );
+        if (hasActiveTask) return;
+
+        const nextPending = taskList
+            .filter(t => t.status === "pending")
+            .sort((a, b) => a.createdAt - b.createdAt)[0];
+
+        if (nextPending) launchTask(nextPending);
+    }, [tasks, launchTask]);
 
     // --- Task submission ---
 
     const startRcloneAction = useCallback((folders: string[], action: RcloneAction, dry: boolean): string => {
         const taskId = crypto.randomUUID();
-        const label = buildTaskLabel("rclone-action", action, folders, dry);
+        const label = buildTaskLabel("rclone-action", action, folders);
         const task: Task = {
             taskId,
             label,
@@ -275,19 +330,18 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
             dry,
             phase: dry ? "dry" : "final",
             folders,
-            status: "running",
+            status: "pending",
             results: {},
             createdAt: Date.now(),
         };
         setTasks(prev => ({ ...prev, [taskId]: task }));
-        SyncService.ExecuteRcloneActionAsync(taskId, folders, action, dry);
         return taskId;
     }, []);
 
     const startBackup = useCallback((dry: boolean): string => {
         const taskId = crypto.randomUUID();
         const projectName = selectedProject ?? "Unknown";
-        const label = `${projectName} - Backup${dry ? " (preview)" : ""}`;
+        const label = `${projectName} - Backup`;
         const task: Task = {
             taskId,
             label,
@@ -295,12 +349,11 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
             dry,
             phase: dry ? "dry" : "final",
             folders: [`${projectName} - Backup`],
-            status: "running",
+            status: "pending",
             results: {},
             createdAt: Date.now(),
         };
         setTasks(prev => ({ ...prev, [taskId]: task }));
-        SyncService.ExecuteFullBackupAsync(taskId, dry);
         return taskId;
     }, [selectedProject]);
 
@@ -316,6 +369,7 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
     // --- Task approval (dry-run → final) ---
 
     const approveTask = useCallback((taskId: string) => {
+        pausedTasks.current.delete(taskId);
         setTasks(prev => {
             const task = prev[taskId];
             if (!task || task.status !== "awaiting_approval") return prev;
@@ -328,7 +382,7 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
                 phase: "final",
                 dry: false,
                 completedAt: undefined,
-                label: task.label.replace(" (preview)", ""),
+                label: task.label,
             };
 
             // Reuse the same taskId so backend events update this task
@@ -345,11 +399,8 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
     // --- Task management ---
 
     const dismissTask = useCallback((taskId: string) => {
-        if (dismissTimers.current[taskId]) {
-            clearTimeout(dismissTimers.current[taskId]);
-            delete dismissTimers.current[taskId];
-        }
         pausedTasks.current.delete(taskId);
+        launchedTaskIds.current.delete(taskId);
         setTasks(prev => {
             const next = { ...prev };
             delete next[taskId];
@@ -361,14 +412,9 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
         setTasks(prev => {
             const next: Record<string, Task> = {};
             for (const [id, task] of Object.entries(prev)) {
-                if (task.status === "running" || task.status === "awaiting_approval") {
+                if (task.status === "pending" || task.status === "running" || task.status === "awaiting_approval") {
                     next[id] = task;
                 } else {
-                    // Clean up timers for dismissed tasks
-                    if (dismissTimers.current[id]) {
-                        clearTimeout(dismissTimers.current[id]);
-                        delete dismissTimers.current[id];
-                    }
                     pausedTasks.current.delete(id);
                 }
             }
