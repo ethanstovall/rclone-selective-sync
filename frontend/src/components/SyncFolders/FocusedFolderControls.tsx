@@ -56,7 +56,7 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
 
     // Get available groups from project config
     const availableGroups = useMemo(() => {
-        return projectConfig?.groups ?? {};
+        return (projectConfig?.groups ?? {}) as Record<string, GroupConfig>;
     }, [projectConfig?.groups]);
 
     const sortedGroupKeys = useMemo(() => {
@@ -135,7 +135,7 @@ const FocusedFolderControls: React.FC<FocusedFolderControls> = (
         if (!focusedFolder || !projectConfig?.folders) {
             return new FolderConfig();
         }
-        return projectConfig.folders[focusedFolder];
+        return projectConfig.folders[focusedFolder] ?? new FolderConfig();
     }, [focusedFolder, projectConfig]);
 
     // The user can't save under the following conditions.

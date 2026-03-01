@@ -50,6 +50,7 @@ interface GroupedFolderTreeProps {
     projectConfig: ProjectConfig | undefined;
     localFolders: string[];
     changedFolders: string[];
+    checkedFolders: string[];
     downloadingFolders: string[];
     isLoadingLocalFolders: boolean;
     isDetectingChanges: boolean;
@@ -358,6 +359,7 @@ const GroupTreeNode: React.FC<{
     indentLevel: number;
     localFolders: string[];
     changedFolders: string[];
+    checkedFolders: string[];
     downloadingFolders: string[];
     isDetectingChanges: boolean;
     targetFolders: string[];
@@ -372,6 +374,7 @@ const GroupTreeNode: React.FC<{
     indentLevel,
     localFolders,
     changedFolders,
+    checkedFolders,
     downloadingFolders,
     isDetectingChanges,
     targetFolders,
@@ -412,6 +415,7 @@ const GroupTreeNode: React.FC<{
                                 indentLevel={indentLevel + 1}
                                 localFolders={localFolders}
                                 changedFolders={changedFolders}
+                                checkedFolders={checkedFolders}
                                 downloadingFolders={downloadingFolders}
                                 isDetectingChanges={isDetectingChanges}
                                 targetFolders={targetFolders}
@@ -446,7 +450,7 @@ const GroupTreeNode: React.FC<{
                                         folderConfig={folderConfig}
                                         isLocal={isLocal}
                                         isChanged={isChanged}
-                                        isChecking={isLocal && isDetectingChanges}
+                                        isChecking={isLocal && isDetectingChanges && !checkedFolders.includes(folderKey)}
                                         isChecked={isChecked}
                                         isFocused={isFocused}
                                         isDownloading={isDownloading}
@@ -488,6 +492,7 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
     projectConfig,
     localFolders,
     changedFolders,
+    checkedFolders,
     downloadingFolders,
     isLoadingLocalFolders,
     isDetectingChanges,
@@ -512,7 +517,10 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
         if (!projectConfig?.groups || !projectConfig?.folders) {
             return [];
         }
-        const tree = buildGroupTree(projectConfig.groups, projectConfig.folders);
+        const tree = buildGroupTree(
+            projectConfig.groups as Record<string, GroupConfig>,
+            projectConfig.folders as Record<string, FolderConfig>,
+        );
         return filterTree(tree, searchTerm);
     }, [projectConfig?.groups, projectConfig?.folders, searchTerm]);
 
@@ -607,6 +615,7 @@ const GroupedFolderTree: React.FC<GroupedFolderTreeProps> = ({
                         indentLevel={0}
                         localFolders={localFolders}
                         changedFolders={changedFolders}
+                        checkedFolders={checkedFolders}
                         downloadingFolders={downloadingFolders}
                         isDetectingChanges={isDetectingChanges}
                         targetFolders={targetFolders}

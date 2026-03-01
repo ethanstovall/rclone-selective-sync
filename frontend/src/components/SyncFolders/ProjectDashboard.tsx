@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { RcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { Alert, Autocomplete, Box, Checkbox, FormControlLabel, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
 import { CleaningServices, CloudUpload, CloudDownload, CreateNewFolderRounded, Refresh, FolderSpecial } from "@mui/icons-material";
@@ -15,7 +15,7 @@ import ManageGroupsDialog from "./ManageGroupsDialog.tsx";
 import { useTaskQueue } from "../../hooks/TaskQueueContext.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
-    const { startRcloneAction, startDetectChanges, detectedChangedFolders, isDetectingChanges } = useTaskQueue();
+    const { tasks, startRcloneAction, startDetectChanges, detectedChangedFolders, checkedFolders, isDetectingChanges } = useTaskQueue();
 
     // State for project list filtering
     const [searchTerm, setSearchTerm] = useState("");
@@ -155,6 +155,25 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         loadAndDetect();
     }, [projectConfig, detectChangedFolders, loadLocalFolders]);
 
+    // Re-trigger change detection when a final (non-dry) task completes successfully
+    const handledTaskCompletions = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        for (const task of Object.values(tasks)) {
+            if (
+                task.status === "completed" &&
+                task.phase === "final" &&
+                task.type !== "detect-changes" &&
+                !handledTaskCompletions.current.has(task.taskId)
+            ) {
+                handledTaskCompletions.current.add(task.taskId);
+                loadLocalFolders().then(folders => {
+                    if (folders) detectChangedFolders(folders);
+                });
+                break; // one re-detection per render is enough
+            }
+        }
+    }, [tasks, loadLocalFolders, detectChangedFolders]);
+
     return (
         (projectConfig.folders) ? (
             <Grid2 container spacing={1} size={12} height={"100%"}>
@@ -267,6 +286,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             projectConfig={projectConfig}
                             localFolders={localFolders}
                             changedFolders={changedFolders}
+                            checkedFolders={checkedFolders}
                             downloadingFolders={downloadingFolders}
                             isLoadingLocalFolders={isLoadingLocalFolders}
                             isDetectingChanges={isDetectingChanges}

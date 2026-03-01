@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import {Call as $Call, Create as $Create} from "@wailsio/runtime";
+import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -14,55 +14,44 @@ import * as $models from "./models.js";
  * whether the changes are local or upstream. It's up to the user to be careful.
  * TODO: Flesh this check out, possibly using "rclone check", especially in cases where multiple users are working on the project at once.
  */
-export function DetectChangedFolders(localFolders: string[]): Promise<string[]> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(2751813025, localFolders) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function DetectChangedFolders(localFolders: string[]): $CancellablePromise<string[]> {
+    return $Call.ByID(2751813025, localFolders).then(($result: any) => {
         return $$createType0($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
  * DetectChangedFoldersAsync runs change detection in parallel, emitting per-folder events.
  * Emits "detect-folder-complete" for each folder and "detect-complete" when all done.
  */
-export function DetectChangedFoldersAsync(taskID: string, localFolders: string[]): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(808215963, taskID, localFolders) as any;
-    return $resultPromise;
+export function DetectChangedFoldersAsync(taskID: string, localFolders: string[]): $CancellablePromise<void> {
+    return $Call.ByID(808215963, taskID, localFolders);
 }
 
 /**
  * This function performs the full backup to the specified location for the configured remote.
  */
-export function ExecuteFullBackup(dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1373287177, dry) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function ExecuteFullBackup(dry: boolean): $CancellablePromise<$models.RcloneActionOutput[]> {
+    return $Call.ByID(1373287177, dry).then(($result: any) => {
         return $$createType2($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
  * ExecuteFullBackupAsync runs the full backup in a background goroutine,
  * emitting events as the operation completes.
  */
-export function ExecuteFullBackupAsync(taskID: string, dry: boolean): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(2263277875, taskID, dry) as any;
-    return $resultPromise;
+export function ExecuteFullBackupAsync(taskID: string, dry: boolean): $CancellablePromise<void> {
+    return $Call.ByID(2263277875, taskID, dry);
 }
 
 /**
  * Error handling is done per request, and gracefully returned to the user for evaluation in the frontend.
  */
-export function ExecuteRcloneAction(targetFolders: string[], action: $models.RcloneAction, dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1430199943, targetFolders, action, dry) as any;
-    let $typingPromise = $resultPromise.then(($result) => {
+export function ExecuteRcloneAction(targetFolders: string[], action: $models.RcloneAction, dry: boolean): $CancellablePromise<$models.RcloneActionOutput[]> {
+    return $Call.ByID(1430199943, targetFolders, action, dry).then(($result: any) => {
         return $$createType2($result);
-    }) as any;
-    $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
-    return $typingPromise;
+    });
 }
 
 /**
@@ -71,9 +60,8 @@ export function ExecuteRcloneAction(targetFolders: string[], action: $models.Rcl
  * When all folders are done, emits a "task-complete" event.
  * Returns immediately; the taskID correlates events to the original request.
  */
-export function ExecuteRcloneActionAsync(taskID: string, targetFolders: string[], action: $models.RcloneAction, dry: boolean): Promise<void> & { cancel(): void } {
-    let $resultPromise = $Call.ByID(1463246281, taskID, targetFolders, action, dry) as any;
-    return $resultPromise;
+export function ExecuteRcloneActionAsync(taskID: string, targetFolders: string[], action: $models.RcloneAction, dry: boolean): $CancellablePromise<void> {
+    return $Call.ByID(1463246281, taskID, targetFolders, action, dry);
 }
 
 // Private type creation functions

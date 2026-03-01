@@ -20,7 +20,9 @@ const FolderDescription: React.FC<FolderDescriptionProps> = ({ folderConfig }) =
         if (globalConfig === undefined || selectedProject === undefined) {
             return { localRoot: undefined, remoteRoot: undefined };
         }
-        return { localRoot: globalConfig.remotes[selectedProject].local_path, remoteRoot: globalConfig.remotes[selectedProject].bucket_name };
+        const remote = globalConfig.remotes[selectedProject];
+        if (!remote) return { localRoot: undefined, remoteRoot: undefined };
+        return { localRoot: remote.local_path, remoteRoot: remote.bucket_name };
     }, [globalConfig, selectedProject])
 
     return (

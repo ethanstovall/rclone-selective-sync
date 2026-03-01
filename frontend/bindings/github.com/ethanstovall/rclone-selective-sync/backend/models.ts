@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import {Create as $Create} from "@wailsio/runtime";
+import { Create as $Create } from "@wailsio/runtime";
 
 export class FolderConfig {
     "remote_path": string;
@@ -44,7 +44,7 @@ export class FolderConfig {
 
 export class GlobalConfig {
     "selected_project": string;
-    "remotes": { [_: string]: RemoteConfig };
+    "remotes": { [_ in string]?: RemoteConfig };
 
     /** Creates a new GlobalConfig instance. */
     constructor($$source: Partial<GlobalConfig> = {}) {
@@ -116,8 +116,8 @@ export class GroupConfig {
 
 export class ProjectConfig {
     "allow_global_sync": boolean;
-    "folders": { [_: string]: FolderConfig };
-    "groups": { [_: string]: GroupConfig };
+    "folders": { [_ in string]?: FolderConfig };
+    "groups": { [_ in string]?: GroupConfig };
 
     /** Creates a new ProjectConfig instance. */
     constructor($$source: Partial<ProjectConfig> = {}) {

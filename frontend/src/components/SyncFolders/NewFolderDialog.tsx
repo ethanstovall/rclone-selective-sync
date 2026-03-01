@@ -66,7 +66,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
         if (globalConfig === undefined || selectedProject === undefined) {
             return undefined;
         }
-        return globalConfig.remotes[selectedProject].local_path;
+        return globalConfig.remotes[selectedProject]?.local_path;
     }, [globalConfig, selectedProject]);
 
     // Project config state
@@ -74,7 +74,7 @@ const NewFolderDialog: React.FC<NewFolderDialogProps> = ({ isOpen, setIsOpen }) 
 
     // Get available groups from project config
     const availableGroups = useMemo(() => {
-        return projectConfig?.groups ?? {};
+        return (projectConfig?.groups ?? {}) as Record<string, GroupConfig>;
     }, [projectConfig?.groups]);
 
     const sortedGroupKeys = useMemo(() => {

@@ -139,11 +139,16 @@ func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 		if loadErr != nil {
 			err = loadErr
 		}
+		// Ensure folders/groups maps are never null
+		needsSave := loadedConfig.InitDefaults()
 		// Migrate to groups format if needed
 		if loadedConfig.MigrateToGroups() {
+			needsSave = true
 			fmt.Println("Migrated config to groups format")
+		}
+		if needsSave {
 			if saveErr := saveConfig(configFile, loadedConfig); saveErr != nil {
-				fmt.Printf("Warning: Failed to save migrated config: %v\n", saveErr)
+				fmt.Printf("Warning: Failed to save config: %v\n", saveErr)
 			}
 		}
 		fmt.Println("Loaded sync.json from:", configFile)

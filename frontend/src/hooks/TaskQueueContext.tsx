@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { Events } from "@wailsio/runtime";
 import { RcloneAction } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { SyncService } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
+import { useGlobalConfig } from "./GlobalConfigContext.tsx";
 
 // --- Types ---
 
@@ -13,7 +14,7 @@ export interface TaskFolderResult {
 }
 
 export type TaskType = "rclone-action" | "backup" | "detect-changes";
-export type TaskStatus = "running" | "completed" | "error";
+export type TaskStatus = "running" | "awaiting_approval" | "completed" | "error";
 
 export interface Task {
     taskId: string;
@@ -21,9 +22,11 @@ export interface Task {
     type: TaskType;
     action?: RcloneAction;
     dry?: boolean;
+    phase: "dry" | "final";
     folders: string[];
     status: TaskStatus;
     results: Record<string, TaskFolderResult>;
+    dryResults?: Record<string, TaskFolderResult>;
     createdAt: number;
     completedAt?: number;
 }
@@ -77,16 +80,20 @@ interface TaskQueueContextProps {
     startBackup: (dry: boolean) => string;
     /** Start async change detection. Returns the generated taskId. */
     startDetectChanges: (folders: string[]) => string;
+    /** Approve a dry-run task and transition it to final execution */
+    approveTask: (taskId: string) => void;
     /** Manually dismiss a task */
     dismissTask: (taskId: string) => void;
     /** Clear all completed/errored tasks */
     clearCompletedTasks: () => void;
-    /** Pause auto-dismiss for a task (e.g., when viewing its detail dialog) */
+    /** Pause auto-dismiss for a task (e.g., when viewing output inline) */
     pauseAutoDismiss: (taskId: string) => void;
     /** Resume auto-dismiss for a task */
     resumeAutoDismiss: (taskId: string) => void;
     /** Change detection results (accumulated from the latest detect run) */
     detectedChangedFolders: string[];
+    /** Folders that have completed detection (checked, regardless of changed or not) */
+    checkedFolders: string[];
     /** Whether change detection is currently in progress */
     isDetectingChanges: boolean;
 }
@@ -104,8 +111,10 @@ export const useTaskQueue = () => {
 // --- Provider ---
 
 export const TaskQueueContextProvider = ({ children }: { children: React.ReactNode }) => {
+    const { selectedProject } = useGlobalConfig();
     const [tasks, setTasks] = useState<Record<string, Task>>({});
     const [detectedChangedFolders, setDetectedChangedFolders] = useState<string[]>([]);
+    const [checkedFolders, setCheckedFolders] = useState<string[]>([]);
     const [isDetectingChanges, setIsDetectingChanges] = useState(false);
 
     // Track auto-dismiss timers so we can clear them
@@ -201,7 +210,19 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
                 const hasAnyError = Object.values(task.results).some(r => r.commandError.length > 0);
                 const finalStatus: TaskStatus = hasAnyError ? "error" : "completed";
 
-                // Schedule auto-dismiss for successful tasks
+                // Dry run succeeded without errors → move to awaiting approval
+                if (task.dry && finalStatus === "completed") {
+                    return {
+                        ...prev,
+                        [taskId]: {
+                            ...task,
+                            status: "awaiting_approval",
+                            completedAt: Date.now(),
+                        },
+                    };
+                }
+
+                // Final run or error → normal completion
                 if (finalStatus === "completed") {
                     scheduleAutoDismiss(taskId);
                 }
@@ -219,6 +240,9 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
 
         const unsubDetectFolder = Events.On("detect-folder-complete", (event: { data: DetectFolderCompleteEvent }) => {
             const { targetFolder, hasChanges } = event.data;
+            setCheckedFolders(prev =>
+                prev.includes(targetFolder) ? prev : [...prev, targetFolder]
+            );
             if (hasChanges) {
                 setDetectedChangedFolders(prev =>
                     prev.includes(targetFolder) ? prev : [...prev, targetFolder]
@@ -249,6 +273,7 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
             type: "rclone-action",
             action,
             dry,
+            phase: dry ? "dry" : "final",
             folders,
             status: "running",
             results: {},
@@ -261,13 +286,15 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
 
     const startBackup = useCallback((dry: boolean): string => {
         const taskId = crypto.randomUUID();
-        const label = buildTaskLabel("backup", undefined, undefined, dry);
+        const projectName = selectedProject ?? "Unknown";
+        const label = `${projectName} - Backup${dry ? " (preview)" : ""}`;
         const task: Task = {
             taskId,
             label,
             type: "backup",
             dry,
-            folders: ["backup"],
+            phase: dry ? "dry" : "final",
+            folders: [`${projectName} - Backup`],
             status: "running",
             results: {},
             createdAt: Date.now(),
@@ -275,14 +302,44 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
         setTasks(prev => ({ ...prev, [taskId]: task }));
         SyncService.ExecuteFullBackupAsync(taskId, dry);
         return taskId;
-    }, []);
+    }, [selectedProject]);
 
     const startDetectChanges = useCallback((folders: string[]): string => {
         const taskId = crypto.randomUUID();
         setIsDetectingChanges(true);
         setDetectedChangedFolders([]);
+        setCheckedFolders([]);
         SyncService.DetectChangedFoldersAsync(taskId, folders);
         return taskId;
+    }, []);
+
+    // --- Task approval (dry-run → final) ---
+
+    const approveTask = useCallback((taskId: string) => {
+        setTasks(prev => {
+            const task = prev[taskId];
+            if (!task || task.status !== "awaiting_approval") return prev;
+
+            const updatedTask: Task = {
+                ...task,
+                dryResults: { ...task.results },
+                results: {},
+                status: "running",
+                phase: "final",
+                dry: false,
+                completedAt: undefined,
+                label: task.label.replace(" (preview)", ""),
+            };
+
+            // Reuse the same taskId so backend events update this task
+            if (task.type === "rclone-action" && task.action) {
+                SyncService.ExecuteRcloneActionAsync(taskId, task.folders, task.action, false);
+            } else if (task.type === "backup") {
+                SyncService.ExecuteFullBackupAsync(taskId, false);
+            }
+
+            return { ...prev, [taskId]: updatedTask };
+        });
     }, []);
 
     // --- Task management ---
@@ -304,7 +361,7 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
         setTasks(prev => {
             const next: Record<string, Task> = {};
             for (const [id, task] of Object.entries(prev)) {
-                if (task.status === "running") {
+                if (task.status === "running" || task.status === "awaiting_approval") {
                     next[id] = task;
                 } else {
                     // Clean up timers for dismissed tasks
@@ -325,11 +382,13 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
             startRcloneAction,
             startBackup,
             startDetectChanges,
+            approveTask,
             dismissTask,
             clearCompletedTasks,
             pauseAutoDismiss,
             resumeAutoDismiss,
             detectedChangedFolders,
+            checkedFolders,
             isDetectingChanges,
         }}>
             {children}

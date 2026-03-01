@@ -98,7 +98,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
 
     // Get available groups from project config
     const availableGroups = useMemo(() => {
-        return projectConfig?.groups ?? {};
+        return (projectConfig?.groups ?? {}) as Record<string, GroupConfig>;
     }, [projectConfig?.groups]);
 
     const sortedGroupKeys = useMemo(() => {
@@ -109,7 +109,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
     const folderCounts = useMemo(() => {
         const counts: Record<string, number> = {};
         Object.values(projectConfig?.folders ?? {}).forEach((folder) => {
-            if (folder.group) {
+            if (folder?.group) {
                 counts[folder.group] = (counts[folder.group] || 0) + 1;
             }
         });
@@ -120,7 +120,7 @@ const ManageGroupsDialog: React.FC<ManageGroupsDialogProps> = ({ isOpen, setIsOp
     const childGroupCounts = useMemo(() => {
         const counts: Record<string, number> = {};
         Object.values(availableGroups).forEach((group) => {
-            if (group.parent_group) {
+            if (group?.parent_group) {
                 counts[group.parent_group] = (counts[group.parent_group] || 0) + 1;
             }
         });
