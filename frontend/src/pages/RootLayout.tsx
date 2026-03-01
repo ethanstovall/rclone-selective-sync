@@ -1,10 +1,9 @@
 
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
-// import { PageContainer } from '@toolpad/core/PageContainer';
 import { ComponentType } from "react";
 import PaddedBox from "../components/common/PaddedBox";
 import { Outlet } from "react-router";
-
+import TaskPanel from "../components/TaskQueue/TaskPanel";
 
 const RootLayout: ComponentType<{}> = () => {
     return (
@@ -12,6 +11,7 @@ const RootLayout: ComponentType<{}> = () => {
             <PaddedBox>
                 <Outlet />
             </PaddedBox>
+            <TaskPanel />
         </DashboardLayout>
     )
 }

@@ -1,15 +1,15 @@
-// import {Events, WML} from "@wailsio/runtime";
-// import Project from './pages/Project.js';
 import { createTheme, CssBaseline, useMediaQuery } from '@mui/material';
 import { deepPurple, indigo } from '@mui/material/colors';
 import { useState } from 'react';
-// import RootLayout from './pages/RootLayout.js';
 import { CloudSync, Settings } from "@mui/icons-material";
 import SettingsSystemDaydreamIcon from '@mui/icons-material/SettingsSystemDaydream';
 import { Outlet } from 'react-router';
 import { ReactRouterAppProvider } from '@toolpad/core/react-router';
 import { Navigation } from '@toolpad/core';
 import { MANAGE_REMOTES, PREFERENCES, SYNC_FOLDERS } from './routes';
+import { GlobalConfigContextProvider } from './hooks/GlobalConfigContext';
+import { ProjectConfigContextProvider } from './hooks/ProjectConfigContext';
+import { TaskQueueContextProvider } from './hooks/TaskQueueContext';
 
 const NAVIGATION: Navigation = [
   {
@@ -44,18 +44,9 @@ const BRANDING = {
   title: "Rclone Selective Sync",
   logo: false,
 }
-// This function prints "poop"
 
 
 function App() {
-  // const [time, setTime] = useState<string>('Listening for Time event...');
-  // useEffect(() => {
-  //   Events.On('time', (timeValue: any) => {
-  //     setTime(timeValue.data);
-  //   });
-  //   // Reload WML so it picks up the wml tags
-  //   WML.Reload();
-  // }, []);
 
   // Determine whether the user's system preference is for dark mode. Note this has no effect outside of
   // a browser, but can't hurt to include.
@@ -88,7 +79,13 @@ function App() {
   return (
     <ReactRouterAppProvider navigation={NAVIGATION} branding={BRANDING} theme={appTheme}>
       <CssBaseline enableColorScheme />
-      <Outlet />
+      <GlobalConfigContextProvider>
+        <ProjectConfigContextProvider>
+          <TaskQueueContextProvider>
+            <Outlet />
+          </TaskQueueContextProvider>
+        </ProjectConfigContextProvider>
+      </GlobalConfigContextProvider>
     </ReactRouterAppProvider>
   )
 }

@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // Service structure for project-related operations.
@@ -115,15 +113,13 @@ func (cs *ConfigService) LoadSelectedProjectConfig() (ProjectConfig, error) {
 				localModTime.Format(time.RFC3339), remoteModTime.Format(time.RFC3339))
 
 			// Emit an event to notify the frontend that local has un-synced changes
-			if app := application.Get(); app != nil {
-				app.Event.Emit("sync-status", map[string]interface{}{
-					"status":          "local-newer",
-					"message":         "Local sync.json has changes that may not be on the remote. This could indicate a previous sync failure.",
-					"localModTime":    localModTime.Format(time.RFC3339),
-					"remoteModTime":   remoteModTime.Format(time.RFC3339),
-					"selectedProject": selectedProject,
-				})
-			}
+			emitEvent(EventSyncStatus, SyncStatusPayload{
+				Status:          "local-newer",
+				Message:         "Local sync.json has changes that may not be on the remote. This could indicate a previous sync failure.",
+				LocalModTime:    localModTime.Format(time.RFC3339),
+				RemoteModTime:   remoteModTime.Format(time.RFC3339),
+				SelectedProject: selectedProject,
+			})
 		} else {
 			// Local and remote are the same
 			fmt.Printf("Local sync.json matches remote (both: %v)\n", localModTime.Format(time.RFC3339))

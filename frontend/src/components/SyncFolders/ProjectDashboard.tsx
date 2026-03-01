@@ -1,29 +1,27 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { RcloneAction, RcloneActionOutput } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
+import { RcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { Alert, Autocomplete, Box, Checkbox, FormControlLabel, Grid2, Paper, Snackbar, TextField, Typography } from "@mui/material";
 import { CleaningServices, CloudUpload, CloudDownload, CreateNewFolderRounded, Refresh, FolderSpecial } from "@mui/icons-material";
 import GroupedFolderTree from "./GroupedFolderTree.tsx";
-import { ExecuteRcloneAction } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/syncservice.ts";
-import RcloneActionDialog from "./RcloneActionDialog.tsx";
 import ActionIconButton from "../common/ActionIconButton.tsx";
+import SplitActionButton from "../common/SplitActionButton.tsx";
 import { ProjectSelectorChildProps } from "./ProjectSelector.tsx";
 import React from "react";
-import { FolderService, SyncService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
+import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/index.ts";
 import StandardDialog from "../common/StandardDialog.tsx";
 import FocusedFolderControls from "./FocusedFolderControls.tsx";
 import NewFolderDialog from "./NewFolderDialog.tsx";
 import ManageGroupsDialog from "./ManageGroupsDialog.tsx";
+import { useTaskQueue } from "../../hooks/TaskQueueContext.tsx";
 
 const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ projectConfig }) => {
+    const { startRcloneAction, startDetectChanges, detectedChangedFolders, isDetectingChanges } = useTaskQueue();
+
     // State for project list filtering
     const [searchTerm, setSearchTerm] = useState("");
 
-    // State for Rclone command execution
+    // State for folder selection
     const [targetFolders, setTargetFolders] = useState<string[]>([]);
-    const [rcloneActionDialogOutput, setRcloneActionDialogOutput] = useState<RcloneActionOutput[] | null>(null);
-    const [isRunningRcloneAction, setIsRunningRcloneAction] = useState<boolean>(false);
-    const [isRcloneDialogOpen, setIsRcloneDialogOpen] = useState<boolean>(false);
-    const [activeRcloneAction, setActiveRcloneAction] = useState<RcloneAction>("" as RcloneAction);
 
     // State for local deletion
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
@@ -41,10 +39,6 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // State for all folders which are in the user's file system
     const [localFolders, setLocalFolders] = useState<string[]>([]);
     const [isLoadingLocalFolders, setIsLoadingLocalFolders] = useState<boolean>(true);
-    const [isDetectingChanges, setIsDetectingChanges] = useState<boolean>(false);
-
-    // State for folders that have pending changes
-    const [changedFolders, setChangedFolders] = useState<string[]>([]);
 
     // State for async folder downloads
     const [downloadingFolders, setDownloadingFolders] = useState<string[]>([]);
@@ -54,46 +48,15 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         return targetFolders.length === 0;
     }, [targetFolders])
 
-    const handleSearchChange = (event, value) => {
+    const handleSearchChange = (_event, value) => {
         setSearchTerm(value);
     };
 
-
-    const handleRcloneDialogClose = async (event, reason) => {
-        if (reason === 'backdropClick' && isRunningRcloneAction) {
-            // Don't allow the dialog window to close while an Rclone action is running in the background.
-            setIsRcloneDialogOpen(true);
-            return;
-        }
-        setIsRcloneDialogOpen(false);
-        setRcloneActionDialogOutput(null);
+    // Submit an rclone action to the task queue (non-blocking)
+    const handleRcloneAction = useCallback((rcloneAction: RcloneAction, dry: boolean) => {
+        startRcloneAction(targetFolders, rcloneAction, dry);
         setTargetFolders([]);
-    }
-
-    const handleRcloneAction = async (rcloneAction: RcloneAction, dry: boolean) => {
-        setActiveRcloneAction(rcloneAction);
-        setIsRunningRcloneAction(true);
-        setIsRcloneDialogOpen(true);
-        const output = await ExecuteRcloneAction(targetFolders, rcloneAction, dry);
-        setIsRunningRcloneAction(false);
-        if (dry) {
-            // Open the finalize dialog if the dry run just completed
-            setIsRcloneDialogOpen(true);
-            setRcloneActionDialogOutput(output);
-        } else {
-            // Close the finalize dialog if the final run just completed
-            setIsRcloneDialogOpen(false);
-            setRcloneActionDialogOutput(null);
-            setTargetFolders([]);
-        }
-        // Reload the local folders and detect changes after any sync operation
-        if (activeRcloneAction === RcloneAction.COPY_PULL || activeRcloneAction === RcloneAction.SYNC_PULL || activeRcloneAction === RcloneAction.SYNC_PUSH) {
-            const folders = await loadLocalFolders();
-            if (folders) {
-                detectChangedFolders(folders);
-            }
-        }
-    }
+    }, [targetFolders, startRcloneAction]);
 
     // Delete the targeted folders from the local file system.
     const handleRemoveLocal = async () => {
@@ -107,7 +70,6 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             setIsDeleteDialogOpen(false);
             setTargetFolders([]);
         }
-        // Last, reload the local folders so that the updates are reflected in the folder tree.
         loadLocalFolders();
     }
 
@@ -117,7 +79,6 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
             setIsLoadingLocalFolders(true);
             const loadedLocalFolders = await FolderService.GetLocalFolders();
             setLocalFolders(loadedLocalFolders);
-            // Return the loaded local folders for any caller that needs to know them.
             return loadedLocalFolders;
         } catch (error: any) {
             console.error(`Error loading local folders:`, error);
@@ -126,20 +87,13 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         }
     }, [])
 
-    // Detect and store which folders have changes
-    const detectChangedFolders = useCallback(async (folders: string[]) => {
-        try {
-            setIsDetectingChanges(true);
-            const detected = await SyncService.DetectChangedFolders(folders);
-            setChangedFolders(detected);
-            return detected;
-        } catch (error: any) {
-            console.error(`Error detecting changes in local folders:`, error);
-            return [];
-        } finally {
-            setIsDetectingChanges(false);
-        }
-    }, []);
+    // Trigger async change detection via the task queue
+    const detectChangedFolders = useCallback((folders: string[]) => {
+        startDetectChanges(folders);
+    }, [startDetectChanges]);
+
+    // Use changedFolders from the task queue context
+    const changedFolders = detectedChangedFolders;
 
     // Check if all changed folders are currently selected
     const allChangedSelected = useMemo(() => {
@@ -150,10 +104,8 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // Handle "Select all changed" checkbox toggle
     const handleSelectAllChanged = useCallback(() => {
         if (allChangedSelected) {
-            // Deselect all changed folders
             setTargetFolders(targetFolders.filter((f) => !changedFolders.includes(f)));
         } else {
-            // Select all changed folders (add any not already selected)
             const newSelection = [...targetFolders];
             changedFolders.forEach((f) => {
                 if (!newSelection.includes(f)) {
@@ -164,44 +116,33 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
         }
     }, [allChangedSelected, changedFolders, targetFolders]);
 
-    // Handle async download of a single non-local folder
+    // Handle async download of a single non-local folder (still uses old blocking path for now)
     const handleDownloadFolder = useCallback(async (folderKey: string) => {
-        // Add to downloading list
         setDownloadingFolders((prev) => [...prev, folderKey]);
         setDownloadError(null);
 
         try {
-            // First, create the local folder if it doesn't exist (handles empty remote folders)
-            // Ignore errors if folder already exists
             try {
                 await FolderService.CreateLocalFolders([folderKey]);
             } catch {
                 // Folder may already exist, continue with download
             }
 
-            // Execute download (COPY_PULL) for this single folder without dry run
-            const output = await ExecuteRcloneAction([folderKey], RcloneAction.COPY_PULL, false);
-
-            // Check if there was an error
-            const folderOutput = output.find((o) => o.target_folder === folderKey);
-            if (folderOutput?.command_error) {
-                setDownloadError({
-                    folder: folderKey,
-                    message: folderOutput.command_error,
-                });
-            }
-            // Always refresh local folders list after download attempt
-            await loadLocalFolders();
+            // Use the task queue for download too
+            startRcloneAction([folderKey], RcloneAction.COPY_PULL, false);
+            // Refresh local folders list after a short delay to allow the download to start
+            setTimeout(async () => {
+                await loadLocalFolders();
+                setDownloadingFolders((prev) => prev.filter((f) => f !== folderKey));
+            }, 2000);
         } catch (error: any) {
             setDownloadError({
                 folder: folderKey,
                 message: error.message || "Download failed",
             });
-        } finally {
-            // Remove from downloading list
             setDownloadingFolders((prev) => prev.filter((f) => f !== folderKey));
         }
-    }, [loadLocalFolders]);
+    }, [loadLocalFolders, startRcloneAction]);
 
     useEffect(() => {
         // Recalculate the folders the user has locally and detect changes
@@ -286,21 +227,21 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             inputIcon={CleaningServices}
                             onClick={() => setIsDeleteDialogOpen(true)}
                         />
-                        <ActionIconButton
-                            tooltip="Push to Remote"
+                        <SplitActionButton
+                            tooltip="Push to Remote (preview first)"
                             color="primary"
                             disabled={areActionButtonsDisabled}
-                            loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PUSH}
                             inputIcon={CloudUpload}
-                            onClick={() => { handleRcloneAction(RcloneAction.SYNC_PUSH, true) }}
+                            onClickDefault={() => handleRcloneAction(RcloneAction.SYNC_PUSH, true)}
+                            onClickDirect={() => handleRcloneAction(RcloneAction.SYNC_PUSH, false)}
                         />
-                        <ActionIconButton
-                            tooltip="Pull from Remote"
+                        <SplitActionButton
+                            tooltip="Pull from Remote (preview first)"
                             color="primary"
                             disabled={areActionButtonsDisabled}
-                            loading={isRunningRcloneAction && activeRcloneAction === RcloneAction.SYNC_PULL}
                             inputIcon={CloudDownload}
-                            onClick={() => { handleRcloneAction(RcloneAction.SYNC_PULL, true) }}
+                            onClickDefault={() => handleRcloneAction(RcloneAction.SYNC_PULL, true)}
+                            onClickDirect={() => handleRcloneAction(RcloneAction.SYNC_PULL, false)}
                         />
                         <NewFolderDialog
                             isOpen={isNewFolderDialogOpen}
@@ -315,7 +256,7 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             isDisabled={false}
                             isLoading={isDeletingLocal}
                             isOpen={isDeleteDialogOpen}
-                            handleClose={(event, reason) => setIsDeleteDialogOpen(false)}
+                            handleClose={(_event, _reason) => setIsDeleteDialogOpen(false)}
                             handleConfirm={handleRemoveLocal}
                         >
                             <Typography>All selected folders will be deleted from your local file system.</Typography>
@@ -335,14 +276,6 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
                             setFocusedFolder={setFocusedFolder}
                             setTargetFolders={setTargetFolders}
                             onDownloadFolder={handleDownloadFolder}
-                        />
-                        <RcloneActionDialog
-                            action={activeRcloneAction}
-                            rcloneDryOutput={rcloneActionDialogOutput}
-                            isRunningRcloneAction={isRunningRcloneAction}
-                            isOpen={isRcloneDialogOpen}
-                            handleClose={handleRcloneDialogClose}
-                            runRcloneCommand={() => { handleRcloneAction(activeRcloneAction, false) }}
                         />
                     </Grid2>
                 </Grid2>

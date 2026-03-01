@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { GlobalConfig } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.js";
+import { GlobalConfig } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { ConfigService } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
 
 interface GlobalConfigContextProps {

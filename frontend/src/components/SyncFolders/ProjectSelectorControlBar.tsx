@@ -3,10 +3,10 @@ import HeaderTypography from "../common/HeaderTypography";
 import HeaderSelectMenu from "../common/HeaderSelectMenu";
 import ActionIconButton from "../common/ActionIconButton";
 import { OpenInNewRounded, Storage } from "@mui/icons-material";
-import { FolderService, RcloneAction, RcloneActionOutput, SyncService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
-import ActionButton from "../common/ActionButton";
-import { useState } from "react";
-import RcloneActionDialog from "./RcloneActionDialog";
+import { FolderService } from "../../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
+import SplitActionButton from "../common/SplitActionButton";
+import { useCallback } from "react";
+import { useTaskQueue } from "../../hooks/TaskQueueContext";
 
 interface ProjectSelectorControlBarProps {
     selectedProject: string | undefined;
@@ -15,36 +15,12 @@ interface ProjectSelectorControlBarProps {
 }
 
 const ProjectSelectorControlBar: React.FC<ProjectSelectorControlBarProps> = ({ selectedProject, projectOptions, setSelectedProject }) => {
+    const { startBackup } = useTaskQueue();
 
-    // Rclone Action Dialog state. Mostly duplicated from ProjectDashboard. TODO: genericize this more effectively for reuse.
-    const [rcloneActionDialogOutput, setRcloneActionDialogOutput] = useState<RcloneActionOutput[] | null>(null);
-    const [isRunningRcloneAction, setIsRunningRcloneAction] = useState<boolean>(false);
-    const [isRcloneDialogOpen, setIsRcloneDialogOpen] = useState<boolean>(false);
-    // Rclone Action Dialog functions. Mostly duplicated from ProjectDashboard. TODO: genericize this more effectively for reuse.
-    const handleRcloneDialogClose = async (event, reason) => {
-        if (reason === 'backdropClick' && isRunningRcloneAction) {
-            // Don't allow the dialog window to close while an Rclone action is running in the background.
-            setIsRcloneDialogOpen(true);
-            return;
-        }
-        setIsRcloneDialogOpen(false);
-        setRcloneActionDialogOutput(null);
-    }
-    const handleBackupProject = async (dry: boolean) => {
-        setIsRunningRcloneAction(true);
-        setIsRcloneDialogOpen(true);
-        const output = await SyncService.ExecuteFullBackup(dry);
-        setIsRunningRcloneAction(false);
-        if (dry) {
-            // Open the finalize dialog if the dry run just completed.
-            setIsRcloneDialogOpen(true);
-            setRcloneActionDialogOutput(output);
-        } else {
-            // Close the finalize dialog if the final run just completed.
-            setIsRcloneDialogOpen(false);
-            setRcloneActionDialogOutput(null);
-        }
-    }
+    // Submit a backup to the task queue (non-blocking)
+    const handleBackupProject = useCallback((dry: boolean) => {
+        startBackup(dry);
+    }, [startBackup]);
 
     // Select a project.
     const handleChange = (event: SelectChangeEvent<unknown>, child: React.ReactNode) => {
@@ -82,23 +58,14 @@ const ProjectSelectorControlBar: React.FC<ProjectSelectorControlBarProps> = ({ s
                 </HeaderSelectMenu>
             </FormControl>
             <ActionIconButton onClick={() => { handleOpenFolder("") }} inputIcon={OpenInNewRounded} color="primary" tooltip="Open Project" />
-            <ActionButton
-                text="Backup"
-                size="large"
+            <SplitActionButton
+                tooltip="Backup to Secondary Location (preview first)"
+                directTooltip="Backup Directly (skip preview)"
                 color="secondary"
-                variant="outlined"
-                tooltip="Backup to Secondary Location"
                 disabled={false}
-                endIcon={<Storage />}
-                onClick={() => { handleBackupProject(true) }}
-            />
-            <RcloneActionDialog
-                action={RcloneAction.SYNC_PULL}
-                rcloneDryOutput={rcloneActionDialogOutput}
-                isRunningRcloneAction={isRunningRcloneAction}
-                isOpen={isRcloneDialogOpen}
-                handleClose={handleRcloneDialogClose}
-                runRcloneCommand={() => { handleBackupProject(false) }}
+                inputIcon={Storage}
+                onClickDefault={() => handleBackupProject(true)}
+                onClickDirect={() => handleBackupProject(false)}
             />
             <ActionIconButton onClick={() => { handleOpenFolder("BACKUP") }} inputIcon={OpenInNewRounded} color="secondary" tooltip="Open Backup" />
         </Box>

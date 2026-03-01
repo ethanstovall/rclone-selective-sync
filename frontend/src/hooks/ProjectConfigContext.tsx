@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { ProjectConfig } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.js";
+import { ProjectConfig } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend/models.ts";
 import { ConfigService } from "../../bindings/github.com/ethanstovall/rclone-selective-sync/backend";
-import { useGlobalConfig } from "./GlobalConfigContext.js";
+import { useGlobalConfig } from "./GlobalConfigContext.tsx";
 import { Events } from "@wailsio/runtime";
 import { Alert, Snackbar } from "@mui/material";
 

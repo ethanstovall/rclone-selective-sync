@@ -24,6 +24,15 @@ export function DetectChangedFolders(localFolders: string[]): Promise<string[]> 
 }
 
 /**
+ * DetectChangedFoldersAsync runs change detection in parallel, emitting per-folder events.
+ * Emits "detect-folder-complete" for each folder and "detect-complete" when all done.
+ */
+export function DetectChangedFoldersAsync(taskID: string, localFolders: string[]): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(808215963, taskID, localFolders) as any;
+    return $resultPromise;
+}
+
+/**
  * This function performs the full backup to the specified location for the configured remote.
  */
 export function ExecuteFullBackup(dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
@@ -36,6 +45,15 @@ export function ExecuteFullBackup(dry: boolean): Promise<$models.RcloneActionOut
 }
 
 /**
+ * ExecuteFullBackupAsync runs the full backup in a background goroutine,
+ * emitting events as the operation completes.
+ */
+export function ExecuteFullBackupAsync(taskID: string, dry: boolean): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(2263277875, taskID, dry) as any;
+    return $resultPromise;
+}
+
+/**
  * Error handling is done per request, and gracefully returned to the user for evaluation in the frontend.
  */
 export function ExecuteRcloneAction(targetFolders: string[], action: $models.RcloneAction, dry: boolean): Promise<$models.RcloneActionOutput[]> & { cancel(): void } {
@@ -45,6 +63,17 @@ export function ExecuteRcloneAction(targetFolders: string[], action: $models.Rcl
     }) as any;
     $typingPromise.cancel = $resultPromise.cancel.bind($resultPromise);
     return $typingPromise;
+}
+
+/**
+ * ExecuteRcloneActionAsync runs the rclone action for each folder in parallel,
+ * emitting a "task-folder-complete" event as each folder finishes.
+ * When all folders are done, emits a "task-complete" event.
+ * Returns immediately; the taskID correlates events to the original request.
+ */
+export function ExecuteRcloneActionAsync(taskID: string, targetFolders: string[], action: $models.RcloneAction, dry: boolean): Promise<void> & { cancel(): void } {
+    let $resultPromise = $Call.ByID(1463246281, taskID, targetFolders, action, dry) as any;
+    return $resultPromise;
 }
 
 // Private type creation functions

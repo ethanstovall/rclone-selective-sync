@@ -1,6 +1,10 @@
 # Feature: Persistent Project State Across Pages
 
-## Summary
+## Status: Implemented (folded into Async Task Queue)
+
+This feature was implemented as Phase 1 of [FEATURE_ASYNC_TASK_QUEUE.md](FEATURE_ASYNC_TASK_QUEUE.md). `GlobalConfigContextProvider`, `ProjectConfigContextProvider`, and `TaskQueueContextProvider` are all mounted at the app root in `App.tsx`, persisting across page navigation.
+
+## Original Summary
 
 Lift the selected project and its associated state (project config, local folders, changed folders) out of the Sync Folders page so that it persists when the user navigates to Settings or Remotes. This is a prerequisite for background tasks to continue running while the user is on another page.
 
