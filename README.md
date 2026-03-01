@@ -69,10 +69,19 @@ The frontend is built using Material-UI (MUI) and Toolpad for a polished and eff
 #### 1. Components
 Reusable and page-specific components, styled with MUI theming to maintain a consistent look and feel.
 
-#### 2. Hooks
-Custom hooks provide context and manage state, including Global Config and Project Config. These abstractions ensure seamless integration with the backend.
+#### 2. Task Queue
+An async task queue manages all sync operations (push, pull, download, backup). Tasks execute one at a time in FIFO order, preventing concurrent Rclone operations from conflicting. Features include:
+- **Preview mode**: Dry-run tasks show staged changes for review before execution.
+- **Approve & Run**: After reviewing a preview, approve the task to execute the real sync.
+- **Status tracking**: Tasks show real-time progress with per-folder output tabs.
+- **Error detection**: Failed tasks are flagged with error status and persist until manually dismissed.
+- **Auto-dismiss**: Successfully completed tasks automatically disappear after 30 seconds.
+- **Keyboard shortcut**: Press spacebar to toggle the task panel open/closed.
 
-#### 3. Pages
+#### 3. Hooks
+Custom hooks provide context and manage state, including Global Config, Project Config, and the Task Queue. These abstractions ensure seamless integration with the backend.
+
+#### 4. Pages
 Simple, modular pages designed for:
 - Settings
 - Sync operations
@@ -111,9 +120,8 @@ Below are some examples of usage:
 Note that the user has the opportunity to first review the staged changes before pushing to or pulling from the remote with Rclone.
 ![image](https://github.com/user-attachments/assets/5d4bfb5f-7784-4dc0-b141-f349f7d0deae)
 
-
-
-
+### Task Queue
+All sync operations run through a FIFO task queue displayed at the bottom of the screen. Tasks execute one at a time so that each operation sees the true state of the remote. Preview (dry-run) tasks pause the queue for review before the real sync runs. Press spacebar to toggle the task panel.
 
 
 
