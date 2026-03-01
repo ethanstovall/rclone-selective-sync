@@ -66,7 +66,7 @@ function TabPanel({ children, value, index, hasError, ...other }: TabPanelProps)
                 whiteSpace: "pre-wrap",
                 wordWrap: "break-word",
                 overflow: "auto",
-                maxHeight: 300,
+                height: 300,
                 p: 1.5,
                 fontSize: "0.8rem",
                 fontFamily: "monospace",
@@ -139,7 +139,8 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                     <Tabs
                         value={tabValue}
                         onChange={(_e, v) => setTabValue(v)}
-                        centered
+                        variant="scrollable"
+                        scrollButtons={false}
                         sx={{
                             minHeight: 36,
                             "& .MuiTab-root": {
@@ -149,6 +150,7 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                                 textTransform: "none",
                                 fontSize: "0.8rem",
                                 maxWidth: "none",
+                                minWidth: "fit-content",
                                 whiteSpace: "nowrap",
                             },
                         }}
