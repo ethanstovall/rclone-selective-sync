@@ -88,10 +88,6 @@ function TabPanel({ children, value, index, hasError, ...other }: TabPanelProps)
 const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggleExpand, onDismiss, onApprove }) => {
     const [tabValue, setTabValue] = useState(0);
 
-    const completedCount = Object.keys(task.results).length;
-    const totalCount = task.folders.length;
-    const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-
     // Show output section if task is running/awaiting approval, or if any result has actual content
     const hasVisibleOutput = task.status === "running" || task.status === "awaiting_approval" ||
         Object.values(task.results).some(r => r.commandOutput || r.commandError);
@@ -133,8 +129,7 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                 </Box>
                 {task.status === "running" && (
                     <LinearProgress
-                        variant="determinate"
-                        value={progress}
+                        variant="indeterminate"
                         color={task.phase === "dry" ? "secondary" : "primary"}
                         sx={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2 }}
                     />
@@ -178,10 +173,20 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                             return (
                                 <Tab
                                     key={folder}
-                                    label={folder}
+                                    label={
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                            {folder}
+                                            {result && (
+                                                hasError
+                                                    ? <ErrorIcon sx={{ fontSize: 14 }} color="error" />
+                                                    : task.phase === "dry"
+                                                        ? <Visibility sx={{ fontSize: 14 }} color="warning" />
+                                                        : <CheckCircle sx={{ fontSize: 14 }} color="success" />
+                                            )}
+                                        </Box>
+                                    }
                                     sx={{
                                         opacity: result ? 1 : 0.5,
-                                        color: hasError ? "error.main" : undefined,
                                     }}
                                 />
                             );
