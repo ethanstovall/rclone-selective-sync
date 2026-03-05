@@ -205,7 +205,7 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                                     output || null
                                 ) : (
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 2, justifyContent: "center" }}>
-                                        <CircularProgress size={18} />
+                                        <CircularProgress size={18} color={task.phase === "dry" ? "secondary" : "primary"} />
                                         <Typography variant="body2" color="text.secondary">
                                             {task.phase === "dry" ? "Previewing..." : "Running..."}
                                         </Typography>
