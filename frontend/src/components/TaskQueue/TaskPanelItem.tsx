@@ -113,16 +113,17 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                         variant="outlined"
                         color={getStatusColor(task)}
                     />
-                    {task.status !== "running" && (
-                        <Tooltip title="Dismiss">
+                    <Tooltip title="Dismiss">
+                        <span onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
                             <IconButton
                                 size="small"
-                                onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+                                disabled={task.status === "running"}
+                                onClick={onDismiss}
                             >
                                 <Close fontSize="small" />
                             </IconButton>
-                        </Tooltip>
-                    )}
+                        </span>
+                    </Tooltip>
                     <Box sx={{ visibility: task.status === "pending" || task.status === "completed" ? "hidden" : "visible" }}>
                         {isExpanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
                     </Box>
