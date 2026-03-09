@@ -138,9 +138,9 @@ export const TaskQueueContextProvider = ({ children }: { children: React.ReactNo
                 const next = { ...prev };
                 for (const [id, task] of Object.entries(next)) {
                     if (task.status === "completed" && task.completedAt &&
-                        !pausedTasks.current.has(id) &&
                         now - task.completedAt >= AUTO_DISMISS_MS) {
                         delete next[id];
+                        pausedTasks.current.delete(id);
                         changed = true;
                     }
                 }
