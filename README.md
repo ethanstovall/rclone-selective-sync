@@ -9,7 +9,7 @@ This tool is ideal for users managing projects where:
 - Projects involve large resources (e.g., VFX assets, rendered scenes, global resource libraries).
 - Cloud storage is used for backups, and there is a need to avoid accidental deletions during synchronization.
 
-### Use Case Example
+### Use Case Examples
 A VFX project may have:
 - A global resources folder containing essential shared assets.
 - Dozens or hundreds of scene-specific folders with rendered assets, often large in size.
