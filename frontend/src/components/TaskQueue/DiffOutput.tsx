@@ -1,6 +1,5 @@
 import React, { useMemo } from "react";
 import { Box, Chip, Typography, useTheme } from "@mui/material";
-import { Add, Edit, DeleteOutline } from "@mui/icons-material";
 
 interface DiffEntry {
     type: "add" | "update" | "delete";
@@ -36,103 +35,37 @@ interface DiffOutputProps {
     diff: DiffResult;
 }
 
-/** Groups entries by their directory path, sorted alphabetically. Root ("") sorts first. */
-function groupByDir(entries: DiffEntry[]): [string, DiffEntry[]][] {
+/** Merge all entries and group by directory, sorted alphabetically. */
+function groupAllByDir(diff: DiffResult): [string, DiffEntry[]][] {
+    const all: DiffEntry[] = [
+        ...(diff.additions || []),
+        ...(diff.updates || []),
+        ...(diff.deletions || []),
+    ];
     const map = new Map<string, DiffEntry[]>();
-    for (const entry of entries) {
+    for (const entry of all) {
         const lastSlash = entry.path.lastIndexOf("/");
         const dir = lastSlash >= 0 ? entry.path.substring(0, lastSlash) : "";
         if (!map.has(dir)) map.set(dir, []);
         map.get(dir)!.push(entry);
     }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const sorted = Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const typeOrder = { add: 0, update: 1, delete: 2 };
+    for (const [, entries] of sorted) {
+        entries.sort((a, b) => typeOrder[a.type] - typeOrder[b.type] || a.path.localeCompare(b.path));
+    }
+    return sorted;
 }
 
-function DiffSection({ title, icon, entries, color }: {
-    title: string;
-    icon: React.ReactNode;
-    entries: DiffEntry[];
-    color: string;
-}) {
-    const theme = useTheme();
-    const grouped = useMemo(() => groupByDir(entries), [entries]);
-    if (entries.length === 0) return null;
-
-    return (
-        <Box sx={{ mb: 1.5 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.75 }}>
-                {icon}
-                <Typography variant="caption" sx={{ fontWeight: 600, color, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                    {title} ({entries.length})
-                </Typography>
-            </Box>
-            {grouped.map(([dir, dirEntries], groupIdx) => (
-                <Box key={dir || "__root__"} sx={{ mb: groupIdx < grouped.length - 1 ? 0.75 : 0 }}>
-                    {dir && (
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                display: "block",
-                                pl: 2.5,
-                                pb: 0.25,
-                                color: theme.palette.text.disabled,
-                                fontFamily: "monospace",
-                                fontSize: "0.7rem",
-                            }}
-                        >
-                            {dir}/
-                        </Typography>
-                    )}
-                    <Box component="table" sx={{ width: "100%", borderCollapse: "collapse" }}>
-                        <tbody>
-                            {dirEntries.map((entry) => {
-                                const lastSlash = entry.path.lastIndexOf("/");
-                                const fileName = lastSlash >= 0 ? entry.path.substring(lastSlash + 1) : entry.path;
-                                const sizeLabel = entry.oldSize
-                                    ? `${entry.oldSize} → ${entry.size}`
-                                    : entry.detail || entry.size;
-                                return (
-                                    <Box component="tr" key={entry.path}>
-                                        <Box
-                                            component="td"
-                                            sx={{
-                                                pl: dir ? 4 : 2.5,
-                                                py: 0.1,
-                                                fontFamily: "monospace",
-                                                fontSize: "0.8rem",
-                                                color: theme.palette.secondary.main,
-                                                fontWeight: 500,
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
-                                            {fileName}
-                                        </Box>
-                                        <Box
-                                            component="td"
-                                            sx={{
-                                                pl: 2,
-                                                py: 0.1,
-                                                whiteSpace: "nowrap",
-                                                textAlign: "right",
-                                                fontSize: "0.7rem",
-                                                color: theme.palette.text.disabled,
-                                            }}
-                                        >
-                                            {sizeLabel}
-                                        </Box>
-                                    </Box>
-                                );
-                            })}
-                        </tbody>
-                    </Box>
-                </Box>
-            ))}
-        </Box>
-    );
-}
+const typeColors = {
+    add: "success",
+    update: "warning",
+    delete: "error",
+} as const;
 
 const DiffOutput: React.FC<DiffOutputProps> = ({ diff }) => {
     const theme = useTheme();
+    const grouped = useMemo(() => groupAllByDir(diff), [diff]);
     const additions = diff.additions || [];
     const updates = diff.updates || [];
     const deletions = diff.deletions || [];
@@ -148,30 +81,84 @@ const DiffOutput: React.FC<DiffOutputProps> = ({ diff }) => {
 
     return (
         <Box sx={{ py: 0.5 }}>
-            <DiffSection
-                title="Additions"
-                icon={<Add sx={{ fontSize: 14, color: theme.palette.success.main }} />}
-                entries={additions}
-                color={theme.palette.success.main}
-            />
-            <DiffSection
-                title="Updates"
-                icon={<Edit sx={{ fontSize: 14, color: theme.palette.warning.main }} />}
-                entries={updates}
-                color={theme.palette.warning.main}
-            />
-            <DiffSection
-                title="Deletions"
-                icon={<DeleteOutline sx={{ fontSize: 14, color: theme.palette.error.main }} />}
-                entries={deletions}
-                color={theme.palette.error.main}
-            />
+            {grouped.map(([dir, entries], groupIdx) => (
+                <Box
+                    key={dir || "__root__"}
+                    sx={{
+                        mb: groupIdx < grouped.length - 1 ? 1.5 : 0,
+                        borderLeft: `2px solid ${theme.palette.divider}`,
+                        pl: 0.5,
+                    }}
+                >
+                    {dir && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                display: "block",
+                                pl: 1,
+                                pb: 0.25,
+                                color: theme.palette.text.secondary,
+                                fontFamily: "monospace",
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                            }}
+                        >
+                            {dir}/
+                        </Typography>
+                    )}
+                    <Box component="table" sx={{ width: "100%", borderCollapse: "collapse" }}>
+                        <tbody>
+                            {entries.map((entry) => {
+                                const lastSlash = entry.path.lastIndexOf("/");
+                                const fileName = lastSlash >= 0 ? entry.path.substring(lastSlash + 1) : entry.path;
+                                const colorKey = typeColors[entry.type];
+                                const fileColor = theme.palette[colorKey].main;
+                                const sizeLabel = entry.oldSize
+                                    ? `${entry.oldSize} → ${entry.size}`
+                                    : entry.size;
+                                return (
+                                    <Box component="tr" key={entry.path}>
+                                        <Box
+                                            component="td"
+                                            sx={{
+                                                pl: dir ? 3 : 1,
+                                                py: 0.1,
+                                                fontFamily: "monospace",
+                                                fontSize: "0.8rem",
+                                                color: fileColor,
+                                                opacity: 0.8,
+                                                whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {fileName}
+                                        </Box>
+                                        <Box
+                                            component="td"
+                                            sx={{
+                                                pl: 2,
+                                                py: 0.1,
+                                                whiteSpace: "nowrap",
+                                                textAlign: "right",
+                                                fontSize: "0.7rem",
+                                                color: fileColor,
+                                                opacity: 0.5,
+                                            }}
+                                        >
+                                            {sizeLabel}
+                                        </Box>
+                                    </Box>
+                                );
+                            })}
+                        </tbody>
+                    </Box>
+                </Box>
+            ))}
             {/* Summary */}
-            <Box sx={{ display: "flex", gap: 1, mt: 1, pt: 1, borderTop: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ display: "flex", gap: 1, mt: 1.5, pt: 1, borderTop: `1px solid ${theme.palette.divider}`, alignItems: "center" }}>
                 {additions.length > 0 && <Chip size="small" label={`+${additions.length}`} color="success" variant="outlined" sx={{ height: 20, fontSize: "0.7rem" }} />}
                 {updates.length > 0 && <Chip size="small" label={`~${updates.length}`} color="warning" variant="outlined" sx={{ height: 20, fontSize: "0.7rem" }} />}
                 {deletions.length > 0 && <Chip size="small" label={`-${deletions.length}`} color="error" variant="outlined" sx={{ height: 20, fontSize: "0.7rem" }} />}
-                <Typography variant="caption" color="text.disabled" sx={{ ml: "auto" }}>
+                <Typography variant="caption" sx={{ ml: "auto", color: theme.palette.secondary.main, fontWeight: 500 }}>
                     {diff.changeSize} to transfer
                 </Typography>
             </Box>

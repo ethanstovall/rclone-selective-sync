@@ -151,10 +151,9 @@ func RcloneDiffFiles(srcFs, dstFs string) (string, bool, error) {
 				diff := srcTime.Sub(dstTime)
 				if diff < -time.Second || diff > time.Second {
 					updates = append(updates, DiffEntry{
-						Type:   "update",
-						Path:   path,
-						Size:   formatSize(sf.Size),
-						Detail: "timestamp changed",
+						Type: "update",
+						Path: path,
+						Size: formatSize(sf.Size),
 					})
 					changeSize += sf.Size
 				}
