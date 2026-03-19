@@ -1,7 +1,9 @@
 # Rclone Selective Sync
 
+**Embedded Rclone Version: v1.73.2**
+
 ## Overview
-Rclone Selective Sync is a specialized tool designed for projects with a wide variety of large files and resources backed up to the cloud using Rclone. The tool enables users to efficiently manage their local file storage by selectively syncing folders from a project while protecting critical cloud backups.
+Rclone Selective Sync is a specialized tool designed for projects with a wide variety of large files and resources backed up to the cloud using Rclone. Rclone is embedded directly into the application — no separate rclone installation is required. The tool enables users to efficiently manage their local file storage by selectively syncing folders from a project while protecting critical cloud backups.
 
 ### Target Audience
 This tool is ideal for users managing projects where:
