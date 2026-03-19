@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -237,26 +236,9 @@ func handleRcloneConfig(globalConfig *GlobalConfig) error {
 	return nil
 }
 
-// getDefaultRcloneConfigPath gets the default Rclone config file path by executing "rclone config file".
+// getDefaultRcloneConfigPath gets the default Rclone config file path via librclone RPC.
 func getDefaultRcloneConfigPath() (string, error) {
-	cmd := createCommand("rclone", "config", "file")
-	output, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to run 'rclone config file': %v", err)
-	}
-
-	// Parse the output to extract the config path.
-	outputString := string(output)
-	// The output looks like: "Configuration file is stored at:\nC:\\path\\to\\rclone.conf"
-	lines := strings.Split(outputString, "\n")
-	if len(lines) < 2 {
-		return "", fmt.Errorf("unexpected output format: %s", output)
-	}
-
-	// The second line contains the path.
-	configPath := strings.TrimSpace(lines[1])
-	configPath = filepath.Clean(configPath)
-	return configPath, nil
+	return RcloneGetConfigPath()
 }
 
 // pullSyncFileFromRemote pulls the sync.json file from the remote to the local project path.
@@ -270,49 +252,21 @@ func (cs *ConfigService) pullSyncFileFromRemote() error {
 	remoteConfig := cs.configManager.globalConfig.Remotes[selectedProject]
 	projectPath := remoteConfig.LocalPath
 	configFile := filepath.Join(projectPath, "sync.json")
-	remotePath := fmt.Sprintf("%s:%s/sync.json", remoteConfig.RemoteName, remoteConfig.BucketName)
+	srcFs := fmt.Sprintf("%s:%s", remoteConfig.RemoteName, remoteConfig.BucketName)
 
-	// Use rclone copyto to pull the single file
-	cmd := createCommand("rclone", "copyto", remotePath, configFile)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("rclone copyto failed: %s, output: %s", err, string(output))
+	// Use librclone RPC to copy the single file
+	if err := RcloneCopyFile(srcFs, "sync.json", projectPath, "sync.json"); err != nil {
+		return fmt.Errorf("rclone copyfile failed: %v", err)
 	}
 
-	fmt.Printf("Successfully pulled sync.json from %s to %s\n", remotePath, configFile)
+	fmt.Printf("Successfully pulled sync.json from %s to %s\n", srcFs+"/sync.json", configFile)
 	return nil
 }
 
-// getRemoteFileModTime gets the modification time of a file on the remote using rclone lsjson.
-// Returns the mod time or an error if the file doesn't exist or the command fails.
+// getRemoteFileModTime gets the modification time of a file on the remote using librclone RPC.
+// Returns the mod time or an error if the file doesn't exist or the call fails.
 func (cs *ConfigService) getRemoteFileModTime(remotePath string) (time.Time, error) {
-	// Use rclone lsjson to get file info
-	cmd := createCommand("rclone", "lsjson", remotePath)
-	output, err := cmd.Output()
-	if err != nil {
-		return time.Time{}, fmt.Errorf("rclone lsjson failed: %v", err)
-	}
-
-	// Parse the JSON output
-	var fileInfos []struct {
-		ModTime string `json:"ModTime"`
-	}
-	if err := json.Unmarshal(output, &fileInfos); err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse rclone lsjson output: %v", err)
-	}
-
-	// Check if file exists on remote
-	if len(fileInfos) == 0 {
-		return time.Time{}, fmt.Errorf("file not found on remote")
-	}
-
-	// Parse the modification time (RFC3339 format)
-	modTime, err := time.Parse(time.RFC3339, fileInfos[0].ModTime)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse remote mod time: %v", err)
-	}
-
-	return modTime, nil
+	return RcloneGetRemoteFileModTime(remotePath)
 }
 
 // RefreshSyncFile manually refreshes the sync.json from the remote, overwriting the local copy.
