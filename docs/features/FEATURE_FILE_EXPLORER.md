@@ -1,5 +1,7 @@
 # Feature: In-App File Explorer
 
+## Status: Proposed
+
 ## Summary
 
 Implement an integrated file explorer within the application that allows users to browse, select, and interact with project files directly. This serves as a foundation for future features like multi-user locking and provides a controlled interface for file operations.

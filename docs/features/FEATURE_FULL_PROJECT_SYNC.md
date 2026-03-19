@@ -1,5 +1,7 @@
 # Feature: Full-Project Drift Check & Sync
 
+## Status: Proposed
+
 ## Summary
 
 Implement full-project drift detection and synchronization that can scan the entire remote project for changes, allowing users to sync new or modified content without accidentally deleting cloud folders that aren't downloaded locally.

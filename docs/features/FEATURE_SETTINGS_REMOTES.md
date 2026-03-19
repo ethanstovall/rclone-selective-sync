@@ -1,5 +1,7 @@
 # Feature: Settings & Remotes Page Enhancement
 
+## Status: Proposed
+
 ## Summary
 
 Flesh out the currently stub Preferences and Manage Remotes pages to allow users to configure application settings and manage rclone remotes directly within the app, including adding new remotes without manually editing config files.

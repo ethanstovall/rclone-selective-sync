@@ -1,5 +1,7 @@
 # Feature: Secure Credential Configuration
 
+## Status: Proposed
+
 ## Summary
 
 Devise a remote configuration setup that avoids storing plaintext API keys and credentials in config files. Implement secure credential storage using OS-level secret management, encryption, or external secret providers.

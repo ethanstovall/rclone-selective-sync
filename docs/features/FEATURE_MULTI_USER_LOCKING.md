@@ -1,5 +1,7 @@
 # Feature: Multi-User Locking Mechanism
 
+## Status: Proposed
+
 ## Summary
 
 Implement a collaborative locking system that allows multiple users to work on the same project simultaneously while preventing conflicts. Users can lock files or folders at varying granularity levels, and locks prevent others from overwriting content. This is the most complex proposed feature, requiring infrastructure support and significant UI changes.
