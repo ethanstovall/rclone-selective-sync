@@ -9,6 +9,7 @@ import {
     HourglassBottom, Visibility,
 } from "@mui/icons-material";
 import { Task, TaskFolderResult } from "../../hooks/TaskQueueContext";
+import DiffOutput, { parseDiffResult } from "./DiffOutput";
 
 interface TaskPanelItemProps {
     task: Task;
@@ -65,6 +66,7 @@ function TabPanel({ children, value, index, hasError, ...other }: TabPanelProps)
             role="tabpanel"
             hidden={value !== index}
             {...other}
+            className="selectable"
             sx={{
                 whiteSpace: "pre-wrap",
                 wordWrap: "break-word",
@@ -73,7 +75,6 @@ function TabPanel({ children, value, index, hasError, ...other }: TabPanelProps)
                 p: 1.5,
                 fontSize: "0.8rem",
                 fontFamily: "monospace",
-                userSelect: "text",
                 cursor: "text",
                 boxShadow: hasError ? `inset 0 0 8px ${theme.palette.error.main}` : "none",
             }}
@@ -95,7 +96,7 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
     return (
         <ListItem disablePadding sx={{ display: "block" }}>
             {/* Header row — taller with more padding */}
-            <ListItemButton onClick={onToggleExpand} sx={{ py: 1.25, pr: 1 }}>
+            <ListItemButton onClick={() => { if (task.status !== "completed" && task.status !== "pending") onToggleExpand(); }} sx={{ py: 1.25, pr: 1 }}>
                 <ListItemText
                     primary={task.label}
                     primaryTypographyProps={{ variant: "body2", noWrap: true }}
@@ -140,7 +141,11 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
             {/* Inline expandable output — only if there are results to show */}
             <Collapse in={isExpanded && hasVisibleOutput} unmountOnExit>
                 <Divider />
-                <Box sx={{ bgcolor: "background.default" }}>
+                <Box
+                    sx={{ bgcolor: "background.default" }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {/* Folder tabs */}
                     <Tabs
                         value={tabValue}
@@ -199,11 +204,12 @@ const TaskPanelItem: React.FC<TaskPanelItemProps> = ({ task, isExpanded, onToggl
                         const result: TaskFolderResult | undefined = task.results[folder];
                         const hasError = result ? result.commandError.length > 0 : false;
                         const output = result ? (result.commandError || result.commandOutput || "") : "";
+                        const diffResult = result && !hasError ? parseDiffResult(result.commandOutput) : null;
 
                         return (
                             <TabPanel key={folder} value={tabValue} index={index} hasError={hasError}>
                                 {result ? (
-                                    output || null
+                                    diffResult ? <DiffOutput diff={diffResult} /> : (output || null)
                                 ) : (
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 2, justifyContent: "center" }}>
                                         <CircularProgress size={18} color={task.phase === "dry" ? "secondary" : "primary"} />

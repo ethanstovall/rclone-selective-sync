@@ -135,12 +135,10 @@ func MarshalToJSON(object any) (string, error) {
 func (cs *ConfigManager) syncConfigToRemote() error {
 	projectRemoteConfig := cs.GetSelectedProjectRemoteConfig()
 	projectPath := projectRemoteConfig.LocalPath
-	configFile := filepath.Join(projectPath, "sync.json")
-	remotePath := fmt.Sprintf("%s:%s/sync.json", projectRemoteConfig.RemoteName, projectRemoteConfig.BucketName)
-	cmd := createCommand("rclone", "copyto", configFile, remotePath) // use "copyto" for single files
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("rclone copy failed: %s, output: %s", err, string(output))
+	dstFs := fmt.Sprintf("%s:%s", projectRemoteConfig.RemoteName, projectRemoteConfig.BucketName)
+
+	if err := RcloneCopyFile(projectPath, "sync.json", dstFs, "sync.json"); err != nil {
+		return fmt.Errorf("rclone copyfile failed: %v", err)
 	}
 	return nil
 }

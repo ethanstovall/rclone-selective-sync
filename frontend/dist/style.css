@@ -22,6 +22,13 @@
     -ms-user-select: none;
 }
 
+.selectable, .selectable * {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+}
+
 @font-face {
     font-family: "Inter";
     font-style: normal;

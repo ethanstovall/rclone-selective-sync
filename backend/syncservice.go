@@ -3,7 +3,6 @@ package backend
 import (
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -57,16 +56,23 @@ func (ss *SyncService) executeSingleFolder(targetFolder string, action RcloneAct
 		}
 	}
 
-	// Create the Rclone command for this folder
-	command, err := NewRcloneCommand(fullRemotePath, fullLocalPath, action, dry)
-	if err != nil {
-		return RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: err.Error()}
+	// Execute the rclone operation via librclone RPC
+	var output string
+	var rpcErr error
+
+	switch action {
+	case SYNC_PUSH:
+		output, rpcErr = RcloneSync(fullLocalPath, fullRemotePath, dry)
+	case SYNC_PULL:
+		output, rpcErr = RcloneSync(fullRemotePath, fullLocalPath, dry)
+	case COPY_PULL:
+		output, rpcErr = RcloneCopy(fullRemotePath, fullLocalPath, dry)
+	default:
+		return RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: fmt.Sprintf("unsupported action: %s", action)}
 	}
 
-	// Execute the command and collect the output
-	output, err := command.Exec()
-	if err != nil {
-		return RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: err.Error()}
+	if rpcErr != nil {
+		return RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: "", CommandError: rpcErr.Error()}
 	}
 
 	return RcloneActionOutput{TargetFolder: targetFolder, CommandOutput: output, CommandError: ""}
@@ -146,13 +152,9 @@ func (ss *SyncService) ExecuteFullBackup(dry bool) []RcloneActionOutput {
 			CommandError:  fmt.Errorf("error accessing local path %s: %v", fullLocalPath, err).Error(),
 		})
 	} else {
-		command, err := NewRcloneCommand(fullRemotePath, fullLocalPath, SYNC_PULL, dry)
-		if err != nil {
-			outputs = append(outputs, RcloneActionOutput{TargetFolder: selectedProject, CommandOutput: "", CommandError: err.Error()})
-		}
-		output, err := command.Exec()
-		if err != nil {
-			outputs = append(outputs, RcloneActionOutput{TargetFolder: selectedProject, CommandOutput: "", CommandError: err.Error()})
+		output, rpcErr := RcloneSync(fullRemotePath, fullLocalPath, dry)
+		if rpcErr != nil {
+			outputs = append(outputs, RcloneActionOutput{TargetFolder: selectedProject, CommandOutput: "", CommandError: rpcErr.Error()})
 		} else {
 			outputs = append(outputs, RcloneActionOutput{TargetFolder: selectedProject, CommandOutput: output, CommandError: ""})
 		}
@@ -177,16 +179,11 @@ func (ss *SyncService) ExecuteFullBackupAsync(taskID string, dry bool) error {
 		} else if err != nil {
 			result = RcloneActionOutput{TargetFolder: label, CommandOutput: "", CommandError: fmt.Sprintf("error accessing local path %s: %v", fullLocalPath, err)}
 		} else {
-			command, cmdErr := NewRcloneCommand(fullRemotePath, fullLocalPath, SYNC_PULL, dry)
-			if cmdErr != nil {
-				result = RcloneActionOutput{TargetFolder: label, CommandOutput: "", CommandError: cmdErr.Error()}
+			output, rpcErr := RcloneSync(fullRemotePath, fullLocalPath, dry)
+			if rpcErr != nil {
+				result = RcloneActionOutput{TargetFolder: label, CommandOutput: "", CommandError: rpcErr.Error()}
 			} else {
-				output, execErr := command.Exec()
-				if execErr != nil {
-					result = RcloneActionOutput{TargetFolder: label, CommandOutput: "", CommandError: execErr.Error()}
-				} else {
-					result = RcloneActionOutput{TargetFolder: label, CommandOutput: output, CommandError: ""}
-				}
+				result = RcloneActionOutput{TargetFolder: label, CommandOutput: output, CommandError: ""}
 			}
 		}
 
@@ -201,19 +198,27 @@ func (ss *SyncService) ExecuteFullBackupAsync(taskID string, dry bool) error {
 	return nil
 }
 
-// Detect which of the given local folders have any updates. This is a naive check, as it does no checks on modified time to see
-// whether the changes are local or upstream. It's up to the user to be careful.
-// TODO: Flesh this check out, possibly using "rclone check", especially in cases where multiple users are working on the project at once.
+// Detect which of the given local folders have any updates by comparing file listings.
 func (ss *SyncService) DetectChangedFolders(localFolders []string) []string {
-	dryRunOutput := ss.ExecuteRcloneAction(localFolders, SYNC_PUSH, true)
-
 	var changedFolders []string
-	for _, output := range dryRunOutput {
-		if strings.Contains(output.CommandOutput, "--dry-run") {
-			changedFolders = append(changedFolders, output.TargetFolder)
+	for _, folder := range localFolders {
+		folderConfig, exists := ss.configManager.GetProjectConfig().Folders[folder]
+		if !exists {
+			continue
+		}
+		remoteConfig := ss.configManager.GetGlobalConfig().Remotes[ss.configManager.GetGlobalConfig().SelectedProject]
+		fullLocalPath := fmt.Sprintf("%s/%s", remoteConfig.LocalPath, folderConfig.LocalPath)
+		fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, folderConfig.RemotePath)
+
+		hasChanges, err := RcloneHasChanges(fullLocalPath, fullRemotePath)
+		if err != nil {
+			fmt.Printf("[WARN] detect changes failed for %s: %v\n", folder, err)
+			continue
+		}
+		if hasChanges {
+			changedFolders = append(changedFolders, folder)
 		}
 	}
-
 	return changedFolders
 }
 
@@ -227,12 +232,33 @@ func (ss *SyncService) DetectChangedFoldersAsync(taskID string, localFolders []s
 			wg.Add(1)
 			go func(f string) {
 				defer wg.Done()
-				output := ss.executeSingleFolder(f, SYNC_PUSH, true)
+
+				folderConfig, exists := ss.configManager.GetProjectConfig().Folders[f]
+				if !exists {
+					emitEvent(EventDetectFolderComplete, DetectFolderCompletePayload{
+						TaskID:       taskID,
+						TargetFolder: f,
+						HasChanges:   false,
+						CommandError: fmt.Sprintf("folder config not found: %s", f),
+					})
+					return
+				}
+
+				remoteConfig := ss.configManager.GetGlobalConfig().Remotes[ss.configManager.GetGlobalConfig().SelectedProject]
+				fullLocalPath := fmt.Sprintf("%s/%s", remoteConfig.LocalPath, folderConfig.LocalPath)
+				fullRemotePath := fmt.Sprintf("%s:%s/%s", remoteConfig.RemoteName, remoteConfig.BucketName, folderConfig.RemotePath)
+
+				hasChanges, err := RcloneHasChanges(fullLocalPath, fullRemotePath)
+				var cmdError string
+				if err != nil {
+					cmdError = err.Error()
+				}
+
 				emitEvent(EventDetectFolderComplete, DetectFolderCompletePayload{
 					TaskID:       taskID,
 					TargetFolder: f,
-					HasChanges:   strings.Contains(output.CommandOutput, "--dry-run"),
-					CommandError: output.CommandError,
+					HasChanges:   hasChanges,
+					CommandError: cmdError,
 				})
 			}(f)
 		}

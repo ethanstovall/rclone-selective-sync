@@ -55,6 +55,15 @@ const TaskPanel: React.FC = () => {
         return visibleTasks.filter(t => t.status === "completed" || t.status === "error").length;
     }, [visibleTasks]);
 
+    // Auto-collapse tasks when they complete successfully
+    useEffect(() => {
+        setExpandedTaskIds(prev => {
+            const completed = prev.filter(id => tasks[id]?.status === "completed");
+            if (completed.length === 0) return prev;
+            return prev.filter(id => tasks[id]?.status !== "completed");
+        });
+    }, [tasks]);
+
     const toggleTaskExpanded = (taskId: string) => {
         setExpandedTaskIds(prev => {
             if (prev.includes(taskId)) {

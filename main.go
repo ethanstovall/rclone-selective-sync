@@ -21,6 +21,10 @@ var assets embed.FS
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
 func main() {
+	// Initialize the embedded rclone library
+	backend.InitRclone()
+	defer backend.FinalizeRclone()
+
 	// Instantiate the ConfigManager instance that will be passed to all services. Just start with nil config.
 	configManager := backend.NewConfigManager(nil, nil)
 

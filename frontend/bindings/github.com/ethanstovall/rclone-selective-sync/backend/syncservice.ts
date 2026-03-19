@@ -10,9 +10,7 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as $models from "./models.js";
 
 /**
- * Detect which of the given local folders have any updates. This is a naive check, as it does no checks on modified time to see
- * whether the changes are local or upstream. It's up to the user to be careful.
- * TODO: Flesh this check out, possibly using "rclone check", especially in cases where multiple users are working on the project at once.
+ * Detect which of the given local folders have any updates by comparing file listings.
  */
 export function DetectChangedFolders(localFolders: string[]): $CancellablePromise<string[]> {
     return $Call.ByID(2751813025, localFolders).then(($result: any) => {

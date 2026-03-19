@@ -104,17 +104,11 @@ const ProjectDashboard: React.FunctionComponent<ProjectSelectorChildProps> = ({ 
     // Handle "Select all changed" checkbox toggle
     const handleSelectAllChanged = useCallback(() => {
         if (allChangedSelected) {
-            setTargetFolders(targetFolders.filter((f) => !changedFolders.includes(f)));
+            setTargetFolders([]);
         } else {
-            const newSelection = [...targetFolders];
-            changedFolders.forEach((f) => {
-                if (!newSelection.includes(f)) {
-                    newSelection.push(f);
-                }
-            });
-            setTargetFolders(newSelection);
+            setTargetFolders([...changedFolders]);
         }
-    }, [allChangedSelected, changedFolders, targetFolders]);
+    }, [allChangedSelected, changedFolders]);
 
     // Handle async download of a single non-local folder (still uses old blocking path for now)
     const handleDownloadFolder = useCallback(async (folderKey: string) => {
